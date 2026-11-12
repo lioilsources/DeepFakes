@@ -2,7 +2,7 @@
 
 Mobilní aplikace (Flutter) + backend (Go) + inference na DGX Spark. Pro sdílený článek, příspěvek, obrázek nebo video vrátí původ a pravost média, teplotu textu (emoce a manipulativní techniky), ověření tvrzení se zdroji a srovnání dvou článků. Každý výstup má škálu, jistotu, vysvětlení a klikací zdroje.
 
-Stav: **M0 – výzkum** (bez produkčního kódu, čeká na schválení).
+Stav: **M1 – teplota textu** (M0 schváleno 12. 11. 2026). API v `api/`, appka v `app/`, smlouva v `docs/API.md`.
 
 | | |
 |---|---|
@@ -12,7 +12,9 @@ Stav: **M0 – výzkum** (bez produkčního kódu, čeká na schválení).
 | `docs/PRAVDOMER_EVAL.md` | eval čísla a latence po milnících |
 | `eval/` | eval sada Tier 1 (metadata a anotace; texty a obrázky jen lokálně) |
 | `llm_prompts/` | jazykově neutrální prompty LLM |
-| `bin/` | nástroje M0: sběr eval sady, benchmark LLM |
+| `api/` | Go API: ingest URL/textu, teplota per odstavec, SSE |
+| `app/` | Flutter appka (iOS, Android): sdílení URL, průběžné výsledky |
+| `bin/` | nástroje: sběr eval sady, benchmark LLM, měření M1 (`m1_smoke.sh`) |
 
 ## Nástroje M0
 

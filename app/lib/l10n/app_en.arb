@@ -1,0 +1,173 @@
+{
+  "@@locale": "en",
+  "appTitle": "Pravdoměr",
+  "homeHeadline": "Measure the temperature of a text",
+  "homeIntro": "Paste a link to an article or the text itself. We measure emotions and rhetorical techniques — not whether the text is true.",
+  "inputHint": "https://… or paste text",
+  "inputDetectedUrl": "Link detected",
+  "inputDetectedText": "Text ({count} characters)",
+  "@inputDetectedText": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "analyseButton": "Analyse",
+  "pasteButton": "Paste",
+  "clearButton": "Clear",
+  "errorEmptyInput": "Paste a link or text first.",
+  "errorRateLimited": "Too many requests. Try again in {seconds} s.",
+  "@errorRateLimited": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "errorBadRequest": "The input is not valid. Check the link.",
+  "errorTooLarge": "The text is too long.",
+  "errorFetchFailed": "The page could not be downloaded.",
+  "errorExtractFailed": "No article text was found on the page.",
+  "errorLlmUnavailable": "The analysis service is temporarily unavailable. Try again later.",
+  "errorInternal": "Something went wrong on the server.",
+  "errorNetwork": "Cannot reach the server. Check your connection.",
+  "errorNotFound": "The analysis no longer exists.",
+  "errorConnectionLost": "The connection was lost. Partial results are shown.",
+  "errorUnknown": "Unexpected error: {code}",
+  "@errorUnknown": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "retryButton": "Try again",
+  "resultTitle": "Text temperature",
+  "statusQueued": "Waiting in queue…",
+  "statusFetching": "Downloading the page…",
+  "statusAnalyzing": "Analysing paragraphs…",
+  "statusDone": "Analysis finished",
+  "statusConnecting": "Connecting…",
+  "paragraphsProgress": "{done} of {total} paragraphs analysed",
+  "@paragraphsProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "paragraphsFailed": "{count} paragraphs could not be analysed",
+  "@paragraphsFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gaugeLabel": "measured temperature",
+  "gaugePending": "measuring…",
+  "gaugeProvisional": "provisional, from analysed paragraphs",
+  "temperatureDisclaimer": "Temperature ≠ truthfulness. It measures emotions and rhetorical techniques in the text, not whether the text is true. An emotional text can be accurate and a calm one can be wrong.",
+  "temperatureCalm": "calm",
+  "temperatureHeated": "heated",
+  "emotionsTitle": "Emotions",
+  "techniquesTitle": "Rhetorical techniques",
+  "techniquesNone": "No techniques found so far.",
+  "paragraphsTitle": "Paragraphs",
+  "paragraphPending": "Paragraph {p} is being analysed…",
+  "@paragraphPending": {
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  },
+  "paragraphScore": "temperature {score}",
+  "@paragraphScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "headlineClickbait": "Headline clickbait: {percent} %",
+  "@headlineClickbait": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "headlineMismatch": "The headline does not match the body.",
+  "languageLabel": "Language: {code}",
+  "@languageLabel": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "techniqueConfidence": "Model confidence: {percent} %",
+  "@techniqueConfidence": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "techniqueUnknownInfo": "No description available for this technique.",
+  "sheetQuoteLabel": "Quoted passage",
+  "sheetNote": "This is a signal in the text, not a judgement of its author.",
+  "methodInfo": "Model {model}, method {method}",
+  "@methodInfo": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "method": {
+        "type": "String"
+      }
+    }
+  },
+  "techniqueNameCalling": "Name calling",
+  "techniqueNameCallingInfo": "Labelling a person or group with a derogatory tag instead of an argument.",
+  "techniqueLoadedLanguage": "Loaded language",
+  "techniqueLoadedLanguageInfo": "Words with a strong emotional charge meant to provoke a reaction.",
+  "techniqueFearAppeal": "Appeal to fear",
+  "techniqueFearAppealInfo": "Raising fear or anxiety so the reader accepts a conclusion.",
+  "techniqueFalseDilemma": "False dilemma",
+  "techniqueFalseDilemmaInfo": "Presenting only two options when more exist.",
+  "techniqueWhataboutism": "Whataboutism",
+  "techniqueWhataboutismInfo": "Deflecting by pointing to other, allegedly worse behaviour.",
+  "techniqueAppealToAuthority": "Appeal to authority",
+  "techniqueAppealToAuthorityInfo": "The claim rests on someone's authority rather than on evidence.",
+  "techniqueStrawMan": "Straw man",
+  "techniqueStrawManInfo": "Distorting an opposing view so it is easier to refute.",
+  "techniqueExaggeration": "Exaggeration or minimisation",
+  "techniqueExaggerationInfo": "Overstating or downplaying something beyond what the facts support.",
+  "techniqueRepetition": "Repetition",
+  "techniqueRepetitionInfo": "Repeating the same message to make it seem more convincing.",
+  "techniqueDoubt": "Casting doubt",
+  "techniqueDoubtInfo": "Questioning the credibility of a person or institution without support.",
+  "techniqueFlagWaving": "Flag waving",
+  "techniqueFlagWavingInfo": "Using national or group identity as the argument.",
+  "techniqueSlogans": "Slogans",
+  "techniqueSlogansInfo": "A short catchy phrase in place of an explanation.",
+  "techniqueCausalOversimplification": "Causal oversimplification",
+  "techniqueCausalOversimplificationInfo": "Explaining a complex issue by a single cause.",
+  "techniqueBandwagon": "Bandwagon",
+  "techniqueBandwagonInfo": "Claiming something is right because everyone does or believes it.",
+  "techniqueRedHerring": "Red herring",
+  "techniqueRedHerringInfo": "Introducing an unrelated topic that distracts from the point.",
+  "emotionAnger": "Anger",
+  "emotionFear": "Fear",
+  "emotionDisgust": "Disgust",
+  "emotionSadness": "Sadness",
+  "emotionJoy": "Joy",
+  "emotionSurprise": "Surprise",
+  "emotionNeutral": "Neutral"
+}

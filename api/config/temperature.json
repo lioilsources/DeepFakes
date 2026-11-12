@@ -1,0 +1,34 @@
+{
+  "_doc": "Weights for the temperature score (0-100). Temperature measures emotional charge and persuasion techniques, not truthfulness. Change here, never in code; bump method when the meaning changes.",
+  "method": "llm-v1",
+  "paragraph": {
+    "emotion": 0.4,
+    "loaded_language": 0.3,
+    "techniques": 0.3
+  },
+  "emotions": {
+    "anger": 1.0,
+    "fear": 1.0,
+    "disgust": 1.0,
+    "sadness": 0.7,
+    "surprise": 0.5,
+    "joy": 0.3
+  },
+  "techniques": {
+    "default": 0.6,
+    "name_calling": 0.9,
+    "fear_appeal": 0.9,
+    "false_dilemma": 0.8,
+    "straw_man": 0.8,
+    "whataboutism": 0.7,
+    "exaggeration": 0.7,
+    "loaded_language": 0.5,
+    "appeal_to_authority": 0.4,
+    "repetition": 0.4
+  },
+  "document": {
+    "paragraphs": 0.85,
+    "headline_clickbait": 0.15
+  },
+  "min_technique_confidence": 0.5
+}

@@ -17,7 +17,7 @@ Text článku se dá kdykoli znovu stáhnout z URL; SHA-256 ověří, že jde o 
 
 | Část | Počet | Jak vzniká | Stav |
 |---|---|---|---|
-| Články | 3 × 50 (CZ, SK, EN) | `bin/eval_collect_articles.py`: RSS 34 médií, vrstvy news 50 %, opinion 20 %, tabloid 15 %, listed 15 % | vybráno automaticky |
+| Články | 3 × 50 (CZ, SK, EN) | `bin/eval_collect_articles.py`: RSS 34 médií, vrstvy news 50 %, opinion 20 %, tabloid 15 %, listed 15 % | CZ 50, SK 36, EN 50 (12. 11.: duplicitní texty vyřazeny; Parlamentní listy přes RSS vrací rozcestník → CZ listed jen 1, Denník N část paywall upoutávek; SK dobrat jinými feedy) |
 | Tvrzení | 300 (100 na jazyk) | LLM navrhne (silver, `bin/bench_llm.py`), člověk opraví a označí verdikt s důkazem | čeká na ruční anotaci |
 | Teplota | 60 článků (20 na jazyk), per odstavec | LLM předanotace, člověk opraví techniky a citace | čeká na ruční anotaci |
 | Obrázky reálné | 100 | `bin/eval_collect_real_images.py`: Wikimedia Commons, EXIF z fotoaparátu, rok ≥ 2023, volná licence, mimo AI kategorie | 68 / 100 (dosbírat) |

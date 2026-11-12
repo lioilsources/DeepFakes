@@ -39,6 +39,9 @@ STRATUM_SHARE = {"news": 0.5, "opinion": 0.2, "tabloid": 0.15, "listed": 0.15}
 _robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
 
 
+MIN_TEXT_CHARS = 600  # shorter = teaser, gallery or error page
+
+
 def allowed(url: str) -> bool:
     host = urlparse(url).scheme + "://" + urlparse(url).netloc
     if host not in _robots:
@@ -121,11 +124,13 @@ def main() -> int:
         quota = {s: round(args.per_lang * share) for s, share in STRATUM_SHARE.items()}
         got: list[dict] = []
         per_outlet: dict[str, int] = defaultdict(int)
+        # Identical text under different URLs = consent wall, section page or
+        # paywall teaser, not an article: drop every copy and ban the hash.
+        banned: set[str] = set()
         for stratum in ["listed", "tabloid", "opinion", "news"]:
             want = quota[stratum] if stratum != "news" else args.per_lang - len(got)
-            n = 0
             for it in pool[(lang, stratum)]:
-                if n >= want:
+                if sum(1 for g in got if g["stratum"] == stratum) >= want:
                     break
                 if per_outlet[it["outlet"]] >= args.max_per_outlet or not allowed(it["url"]):
                     continue
@@ -135,15 +140,26 @@ def main() -> int:
                     print(f"extract error {it['url']}: {exc}", file=sys.stderr)
                     doc = None
                 time.sleep(1.0)  # politeness
-                if not doc:
+                if not doc or len(doc["text"]) < MIN_TEXT_CHARS:
                     continue
                 sha = hashlib.sha256(doc["text"].encode()).hexdigest()
-                it = it | {"id": f"{lang}-{len(got) + 1:03d}", "sha256": sha}
-                (OUT_DIR / f"{it['id']}.json").write_text(json.dumps(it | {"doc": doc}, ensure_ascii=False, indent=1))
-                got.append(it)
+                if sha in banned:
+                    continue
+                dup = [g for g in got if g["sha256"] == sha]
+                if dup:
+                    banned.add(sha)
+                    for g in dup:
+                        got.remove(g)
+                        per_outlet[g["outlet"]] -= 1
+                    print(f"duplicate text dropped: {it['outlet']} {it['url']}", file=sys.stderr)
+                    continue
+                got.append(it | {"sha256": sha, "doc": doc})
                 per_outlet[it["outlet"]] += 1
-                n += 1
             # unmet quota of minor strata rolls over to 'news' automatically
+        for i, it in enumerate(got, 1):
+            it["id"] = f"{lang}-{i:03d}"
+            (OUT_DIR / f"{it['id']}.json").write_text(json.dumps(it, ensure_ascii=False, indent=1))
+            del it["doc"]
         print(f"{lang}: {len(got)} articles", file=sys.stderr)
         chosen.extend(got)
 
