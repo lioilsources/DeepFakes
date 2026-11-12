@@ -20,7 +20,7 @@ Text článku se dá kdykoli znovu stáhnout z URL; SHA-256 ověří, že jde o 
 | Články | 3 × 50 (CZ, SK, EN) | `bin/eval_collect_articles.py`: RSS 34 médií, vrstvy news 50 %, opinion 20 %, tabloid 15 %, listed 15 % | vybráno automaticky |
 | Tvrzení | 300 (100 na jazyk) | LLM navrhne (silver, `bin/bench_llm.py`), člověk opraví a označí verdikt s důkazem | čeká na ruční anotaci |
 | Teplota | 60 článků (20 na jazyk), per odstavec | LLM předanotace, člověk opraví techniky a citace | čeká na ruční anotaci |
-| Obrázky reálné | 100 | `bin/eval_collect_real_images.py`: Wikimedia Commons, EXIF z fotoaparátu, rok ≥ 2023, volná licence, mimo AI kategorie | sbírá se |
+| Obrázky reálné | 100 | `bin/eval_collect_real_images.py`: Wikimedia Commons, EXIF z fotoaparátu, rok ≥ 2023, volná licence, mimo AI kategorie | 68 / 100 (dosbírat) |
 | Obrázky syntetické | 100 | `tier1/image_prompts.csv`: stejná témata jako reálné, 4 generátory na SPARKu (ComfyUI) | čeká na okno ComfyUI |
 | Obrázky z nových komerčních generátorů | doplněk | výřez z veřejné sady (viz `docs/PRAVDOMER_SOURCES.md`), ne vlastní generování přes cloud | M4 |
 | Screenshoty ze sítí | 50 | ručně z telefonu (X, FB, IG, TikTok, Telegram, Bluesky), viz níže | čeká na Olina |

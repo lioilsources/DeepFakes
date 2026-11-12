@@ -26,7 +26,7 @@ Základ ≈ 61 GB, se všemi doplňky ≈ 104 GB z 128 GB. ComfyUI v profilu nen
 
 ## Kroky
 
-1. Stáhnout váhy (schváleno 12. 11.) přes `sparkctl run` do HF cache AiStacku.
+1. ~~Stáhnout váhy~~ hotovo 12. 11. (job 1112-192, 7/7 repozitářů, ~44 GB do HF cache AiStacku). Chybí MORESPulse (gated, žádost o přístup na HF podává Olin).
 2. PR do AiStacku: compose `docker-compose.deepfake.yaml` + aliasy v `litellm_config.yaml`.
 3. PR do spark-brokeru: profil `deepfake` (služby základu, doplňky `asr`, `vl`, `df-judge`), strop priority projektu `deepfake`.
 4. Smoke test v okně + benchmark (`bin/bench_llm.py`) a zápis do `PRAVDOMER_EVAL.md`.
