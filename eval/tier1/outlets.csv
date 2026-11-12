@@ -1,0 +1,40 @@
+lang,outlet,domain,stratum,feed
+cs,iROZHLAS,irozhlas.cz,news,https://www.irozhlas.cz/rss/irozhlas
+cs,ČT24,ct24.ceskatelevize.cz,news,https://ct24.ceskatelevize.cz/rss/hlavni-zpravy
+cs,Seznam Zprávy,seznamzpravy.cz,news,https://www.seznamzpravy.cz/rss
+cs,Novinky.cz,novinky.cz,news,https://www.novinky.cz/rss
+cs,iDNES.cz,idnes.cz,news,https://servis.idnes.cz/rss.aspx?c=zpravodaj
+cs,Aktuálně.cz,aktualne.cz,news,https://zpravy.aktualne.cz/rss/
+cs,CNN Prima News,cnn.iprima.cz,news,https://cnn.iprima.cz/rss
+cs,Echo24,echo24.cz,opinion,https://echo24.cz/rss/s
+cs,Forum24,forum24.cz,opinion,https://www.forum24.cz/feed/
+cs,Blesk,blesk.cz,tabloid,https://www.blesk.cz/rss
+cs,Parlamentní listy,parlamentnilisty.cz,listed,https://www.parlamentnilisty.cz/export/rss.aspx
+cs,Aeronet,aeronet.news,listed,https://aeronet.news/feed/
+sk,SME,sme.sk,news,https://domov.sme.sk/rss
+sk,Aktuality.sk,aktuality.sk,news,https://www.aktuality.sk/rss/
+sk,Pravda.sk,pravda.sk,news,https://spravy.pravda.sk/rss/xml/
+sk,Denník N,dennikn.sk,news,https://dennikn.sk/feed/
+sk,TASR (teraz.sk),teraz.sk,news,https://www.teraz.sk/rss/vsetky-spravy.rss
+sk,Postoj,postoj.sk,opinion,https://www.postoj.sk/rss
+sk,Standard,standard.sk,opinion,https://standard.sk/feed
+sk,Topky,topky.sk,tabloid,https://www.topky.sk/rss/8/Spravy_-_Domace.rss
+sk,Plus 7 dní,pluska.sk,tabloid,https://www.pluska.sk/rss.xml
+sk,Hlavné správy,hlavnespravy.sk,listed,https://www.hlavnespravy.sk/feed/
+sk,Zem a Vek,zemavek.sk,listed,https://zemavek.sk/feed/
+en,BBC News,bbc.co.uk,news,https://feeds.bbci.co.uk/news/rss.xml
+en,The Guardian,theguardian.com,news,https://www.theguardian.com/world/rss
+en,Al Jazeera,aljazeera.com,news,https://www.aljazeera.com/xml/rss/all.xml
+en,NPR,npr.org,news,https://feeds.npr.org/1001/rss.xml
+en,Fox News,foxnews.com,news,https://moxie.foxnews.com/google-publisher/latest.xml
+en,Sky News,news.sky.com,news,https://feeds.skynews.com/feeds/rss/world.xml
+en,Guardian Opinion,theguardian.com,opinion,https://www.theguardian.com/commentisfree/rss
+en,Telegraph Opinion,telegraph.co.uk,opinion,https://www.telegraph.co.uk/opinion/rss.xml
+en,The Nation,thenation.com,opinion,https://www.thenation.com/feed/?post_type=article
+en,Daily Mail,dailymail.co.uk,tabloid,https://www.dailymail.co.uk/news/index.rss
+en,New York Post,nypost.com,tabloid,https://nypost.com/feed/
+en,Breitbart,breitbart.com,listed,https://feeds.feedburner.com/breitbart
+en,ZeroHedge,zerohedge.com,listed,https://feeds.feedburner.com/zerohedge/feed
+sk,Denník N komentáre,dennikn.sk,opinion,https://dennikn.sk/komentare/feed/
+sk,Pravda názory,pravda.sk,opinion,https://nazory.pravda.sk/rss/xml/
+sk,Hospodárske noviny,hnonline.sk,news,https://hnonline.sk/feed
