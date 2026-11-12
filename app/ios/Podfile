@@ -31,6 +31,9 @@ target 'Runner' do
   use_frameworks!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  # share_handler_ios depends on this local pod; without it pod install fails.
+  # When the ShareExtension target is added, it needs the same line (see app/README.md).
+  pod 'share_handler_ios_models', :path => '.symlinks/plugins/share_handler_ios/ios/Models'
   target 'RunnerTests' do
     inherit! :search_paths
   end

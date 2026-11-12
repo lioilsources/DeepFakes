@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zásady ochrany soukromí — Pravdoměr</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0e1515;
+      color: #e6eeee;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 60px 24px;
+      line-height: 1.7;
+    }
+    h1 { font-size: 2rem; color: #7fb8b9; margin-bottom: 8px; }
+    .updated { color: #7d8f8f; font-size: 0.9rem; margin-bottom: 40px; }
+    h2 { font-size: 1.1rem; color: #7fb8b9; margin: 32px 0 10px; }
+    p, li { color: #c8d4d4; margin-bottom: 12px; }
+    ul { padding-left: 20px; }
+    a { color: #e0a030; }
+    code { color: #f0b080; }
+    .hero { display: flex; align-items: center; gap: 20px; margin-bottom: 32px; }
+    .hero img { width: 96px; height: 96px; border-radius: 22px; }
+    footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid #213030; }
+    footer a { color: #8a9c9c; text-decoration: none; }
+    footer a:hover { color: #7fb8b9; }
+  </style>
+</head>
+<body>
+  <h1>Zásady ochrany soukromí</h1>
+  <p class="updated">Aktualizováno: 12. listopadu 2026</p>
+
+  <h2>O co jde</h2>
+  <p>
+    Zásady se týkají appky <em>Pravdoměr</em> (<code>com.ol1n.pravdomer</code>) od
+    Oldřicha Vořechovského (ol1n). Pravdoměr měří „teplotu“ článku: emoce a
+    manipulativní techniky v textu. Appka nemá účet, reklamy, analytiku ani sledování.
+  </p>
+
+  <h2>Co se odesílá</h2>
+  <p>
+    Když zadáš nebo nasdílíš odkaz na článek nebo vložíš text, appka ho pošle na
+    server Pravdoměru (<code>pravdomer.ol1n.com</code>). U odkazu server stáhne
+    stránku a vytáhne z ní text článku. Text posoudí jazykový model a výsledek se
+    vrátí do appky.
+  </p>
+  <ul>
+    <li>Jazykový model běží na vlastním hardwaru provozovatele, ne u cizí AI služby.</li>
+    <li>S každým požadavkem jde náhodný identifikátor, který si appka vytvoří při
+      prvním spuštění. Slouží jen k omezení počtu požadavků z jednoho zařízení,
+      neváže se na tebe ani na tvé zařízení a server ho neukládá do databáze.</li>
+  </ul>
+
+  <h2>Co server ukládá a jak dlouho</h2>
+  <ul>
+    <li>Adresu článku, jeho text a výsledek rozboru (včetně citovaných úseků) až
+      7 dní. Když stejný článek pošle někdo jiný, dostane uložený výsledek a článek
+      se nerozebírá znovu.</li>
+    <li>Po 7 dnech se text článku i citované úseky smažou. Zůstanou jen čísla
+      (skóre teploty, emoce, názvy technik) a adresa článku.</li>
+    <li>Provozní logy (čas, chyby). Když se stránku nepodaří stáhnout, může log
+      obsahovat její adresu.</li>
+  </ul>
+  <p>
+    Výsledek rozboru je dostupný přes náhodné ID analýzy. Neposílej do appky texty,
+    které nechceš svěřit serveru (třeba soukromé zprávy).
+  </p>
+
+  <h2>V zařízení</h2>
+  <p>Appka si ukládá jen zmíněný náhodný identifikátor. Smazáním appky zmizí.</p>
+
+  <h2>Co nesbíráme</h2>
+  <p>Jméno, e-mail, telefon, polohu, kontakty, identifikátory zařízení ani reklamní ID.</p>
+
+  <h2>Děti</h2>
+  <p>Appka není určená dětem a vědomě od nich nic nesbírá.</p>
+
+  <h2>Změny</h2>
+  <p>Když se zásady změní, nová verze bude na této adrese s novým datem dřív, než změna vyjde v appce.</p>
+
+  <h2>Kontakt</h2>
+  <p><a href="mailto:business@olin.now">business@olin.now</a></p>
+
+  <h1 style="margin-top:64px">Privacy Policy</h1>
+  <p class="updated">Last updated: November 12, 2026</p>
+  <p>
+    <em>Pravdoměr</em> (<code>com.ol1n.pravdomer</code>) by Oldřich Vořechovský (ol1n)
+    measures the “temperature” of an article: emotions and persuasion techniques in
+    the text. It has no account, ads, analytics or tracking.
+  </p>
+  <ul>
+    <li><strong>Sent.</strong> A link or text you enter or share is sent to the
+      Pravdoměr server (<code>pravdomer.ol1n.com</code>). For links, the server
+      downloads the page and extracts the article text. A language model running on
+      the operator's own hardware (not a third-party AI service) analyses it.</li>
+    <li><strong>Device identifier.</strong> Each request carries a random identifier
+      created by the app on first launch, used only to rate-limit requests. It is not
+      linked to you and is not stored in the server database.</li>
+    <li><strong>Stored on the server.</strong> The article address, its text and the
+      result (including quoted passages) for up to 7 days; others submitting the same
+      article get the stored result. After 7 days the text and quotes are deleted;
+      only scores, technique names and the address remain. Operational logs (time,
+      errors) may contain the address of a page that failed to download.</li>
+    <li>Do not submit text you do not want to entrust to the server, such as private messages.</li>
+  </ul>
+  <p>Contact: <a href="mailto:business@olin.now">business@olin.now</a></p>
+  <footer>
+    <a href="index.html">← Pravdoměr</a> &nbsp;·&nbsp;
+    <a href="privacy.html">Soukromí</a> &nbsp;·&nbsp;
+    <a href="support.html">Podpora</a>
+  </footer>
+</body>
+</html>
