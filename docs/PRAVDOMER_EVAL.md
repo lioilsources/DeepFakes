@@ -33,15 +33,21 @@ Skript: `bin/bench_llm.py`, prompty `llm_prompts/temperature.md` a `llm_prompts/
 
 Další na řadě (po schválení stažení): Qwen3.6-27B, Gemma 4 26B, Nemotron 3 Super (samostatné okno).
 
-## M1 — latence teploty (čeká na okno)
+## M1 — latence teploty
 
-`bin/m1_smoke.sh` (job 1112-193, po benchmarku): API lokálně, 15 článků z eval sady (5 CZ/SK/EN) přes URL, 2 souběžně. Měří čas do dokumentu, do prvního odstavce a do souhrnu, shodu detekce jazyka a počet zahozených citací.
+`bin/m1_smoke.sh`: API lokálně (in-memory), 15 článků z eval sady (5 CZ/SK/EN) přes URL, 2 souběžně. 12. 11. 2026, **L40S sandbox**, Qwen3-30B-A3B-Instruct-2507-FP8 (vLLM, profil L), GPU současně na 100 % vytížené cizí dávkou → čísla jsou horní odhad.
 
-| Metrika | p50 | p95 | Datum |
-|---|---|---|---|
-| do dokumentu [s] | – | – | – |
-| do prvního odstavce [s] | – | – | – |
-| do souhrnu [s] | – | – | – |
+| Běh | do dokumentu p50/p95 [s] | do 1. odstavce p50/p95 [s] | do souhrnu p50/p95 [s] | jazyk OK | zahozené citace |
+|---|---|---|---|---|---|
+| bloky 2 500 znaků × 4 paralelně | 0,2 / 0,7 | 27 / 70 | 67 / 106 | 87 % | 74 / 377 (20 %) |
+| bloky 1 200 × 6, přesun citací, oprava SK (výchozí) | 0,2 / 0,4 | 22 / 35 | 37 / 50 | 100 % | 39 / 374 (10 %) |
+
+Zjištění:
+- Extrakce článku je zanedbatelná; čas je celý v LLM. Menší bloky = víc paralelních dotazů = souhrn ~2× dřív.
+- Zahozené citace: model často cituje správně, ale k vedlejšímu odstavci. Citace doslova nalezená v jiném odstavci téhož bloku se přesune (pořád ověřená). Zbylých 10 % jsou parafráze nebo citace z titulku — zahazují se (tvrdý gate).
+- Statistická detekce plete SK s CZ/PL; deklarovaný `lang` stránky v západoslovanské skupině má přednost.
+- Plánovaných 1–5 s pro teplotu přes LLM nejde; realtime až s destilovaným enkodérem (M1b), viz M0 odhad.
+- Měření na Sparku (Qwen3.6-35B-A3B) je ve frontě brokeru (job 1112-193).
 
 ## Gate pro release (kap. 10 plánu)
 

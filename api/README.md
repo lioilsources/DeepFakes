@@ -33,7 +33,7 @@ Bez `DATABASE_URL` běží s pamětí (data se ztratí restartem). LLM na SPARKu
 | `LISTEN_ADDR` | `:8096` | |
 | `DATABASE_URL` | – | `postgres://…`; migrace se aplikují při startu |
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | `deepfake-llm` | alias v LiteLLM, cíl modelu je konfigurace |
-| `LLM_CONCURRENCY`, `LLM_BLOCK_CHARS` | 4, 2500 | paralelní dotazy na článek, velikost bloku |
+| `LLM_CONCURRENCY`, `LLM_BLOCK_CHARS` | 6, 1200 | paralelní dotazy na článek, velikost bloku |
 | `WORKERS`, `QUEUE_SIZE` | 4, 200 | souběžné analýzy, fronta |
 | `CACHE_TTL` | `168h` | potom se smaže text a citace, zůstanou metriky |
 | `SUBMIT_EVERY`, `SUBMIT_BURST` | `20s`, 5 | rate limit per `X-Device-Id` |

@@ -5,10 +5,14 @@
 set -eu
 cd "$(dirname "$0")/.."
 set -a; . ./.env; set +a
+# Override the gateway, e.g. the L40S sandbox: M1_LLM_BASE_URL=… M1_LLM_MODEL=…
+LLM_BASE_URL=${M1_LLM_BASE_URL:-$LLM_BASE_URL}
+LLM_MODEL=${M1_LLM_MODEL:-${LLM_MODEL:-openclaw-default}}
+export LLM_BASE_URL LLM_MODEL
 mkdir -p run/bench
 (cd api && go build -o ../run/pravdomer-api ./cmd/pravdomer-api)
 PORT=${M1_PORT:-18096}
-LISTEN_ADDR=127.0.0.1:$PORT SUBMIT_BURST=1000 LLM_MODEL=${LLM_MODEL:-openclaw-default} DATABASE_URL= \
+LISTEN_ADDR=127.0.0.1:$PORT SUBMIT_BURST=1000 DATABASE_URL= \
   ./run/pravdomer-api > run/bench/m1_api.log 2>&1 &
 API_PID=$!
 trap 'kill $API_PID 2>/dev/null || true' EXIT INT TERM

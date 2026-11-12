@@ -171,3 +171,23 @@ func TestParseWeightsRejectsBadSums(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+
+func TestQuoteMovedToRightParagraph(t *testing.T) {
+	paras := []string{"First paragraph is calm.", "Second one calls them traitors loudly."}
+	f := &fakeLLM{reply: func(string, int) (string, error) {
+		return `{"paragraphs":[{"p":1,"emotions":{},"techniques":[{"technique":"name_calling","quote":"calls them traitors","confidence":0.9}]},
+			{"p":2,"emotions":{"anger":0.5},"techniques":[]}]}`, nil
+	}}
+	a := &Analyzer{LLM: f, Weights: weights(t), Now: clock()}
+	got := map[int]Paragraph{}
+	sum, err := a.Run(context.Background(), Input{Paragraphs: paras}, func(p Paragraph) { got[p.P] = p })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got[1].Techniques) != 0 || len(got[2].Techniques) != 1 || sum.QuotesDropped != 0 {
+		t.Fatalf("p1 %+v p2 %+v", got[1].Techniques, got[2].Techniques)
+	}
+	if q := got[2].Techniques[0]; paras[1][q.Start:q.End] != q.Quote {
+		t.Fatalf("offsets %+v", q)
+	}
+}

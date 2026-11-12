@@ -212,6 +212,8 @@ func dropTitle(ps []string, title string) []string {
 	return ps
 }
 
+var westSlavic = map[string]bool{"cs": true, "sk": true, "pl": true}
+
 // detectLang prefers a statistical guess over the page's lang attribute
 // (CMS templates often declare a wrong one), but falls back to it on short
 // or ambiguous text.
@@ -223,6 +225,11 @@ func detectLang(d Document, declared string) string {
 	info := whatlanggo.Detect(sample)
 	code := info.Lang.Iso6391()
 	declared = strings.ToLower(strings.SplitN(strings.SplitN(declared, "-", 2)[0], "_", 2)[0])
+	// Trigram detection confuses close West Slavic languages on news text;
+	// a page that declares one of them is trusted.
+	if declared != "" && westSlavic[code] && westSlavic[declared] {
+		return declared
+	}
 	if code == "" || (!info.IsReliable() && declared != "") {
 		if declared != "" {
 			return declared

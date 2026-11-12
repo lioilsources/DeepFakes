@@ -13,8 +13,8 @@ func TestFind(t *testing.T) {
 		{"\"zradila\" národ", "„zradila“ národ", true},
 		{"národ - a to", "národ – a to", true},
 		{"národ  –  a   to", "národ – a to", true},
-		{"zradila národ", "", false},     // missing quote marks inside is a different text
-		{"Vlada", "", false},             // diacritics must match
+		{"zradila národ", "", false}, // missing quote marks inside is a different text
+		{"Vlada", "", false},         // diacritics must match
 		{"", "", false},
 		{"Zradila!", "Zradila!", true},
 		{"\"fakt.\"", "fakt.", true}, // surrounding quote marks are stripped

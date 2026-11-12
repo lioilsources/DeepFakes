@@ -113,3 +113,13 @@ func TestFetchRejects(t *testing.T) {
 		}
 	}
 }
+
+func TestDeclaredWestSlavicWins(t *testing.T) {
+	d := Document{Paragraphs: []string{"Vláda schválila návrh zákona o štátnom rozpočte na budúci rok."}}
+	if got := detectLang(d, "sk-SK"); got != "sk" {
+		t.Fatalf("got %s", got)
+	}
+	if got := detectLang(Document{Paragraphs: []string{"The government approved the state budget for next year today."}}, "sk"); got != "en" {
+		t.Fatalf("english page with wrong lang attr: %s", got)
+	}
+}

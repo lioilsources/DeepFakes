@@ -277,47 +277,78 @@ type blockResult struct {
 }
 
 // validate turns a raw model answer into results, dropping anything that
-// does not belong to the block or cannot be quoted verbatim.
+// does not belong to the block or cannot be quoted verbatim. A quote that
+// is verbatim in a different paragraph of the same block is moved there
+// (models often misnumber paragraphs); it is still a validated quote.
 func (a *Analyzer) validate(raw rawResponse, ps []string, b block) blockResult {
 	res := blockResult{clickbait: math.Max(0, math.Min(1, raw.HeadlineClickbait)), matches: raw.HeadlineMatchesBody}
-	seen := map[int]bool{}
+	byIdx := map[int]*Paragraph{}
+	var order []int
+	type pending struct {
+		idx int
+		t   rawTechnique
+	}
+	var techs []pending
 	for _, rp := range raw.Paragraphs {
 		idx := int(rp.P) - 1
-		if idx < b.first || idx >= b.first+b.n || seen[idx] {
+		if idx < b.first || idx >= b.first+b.n || byIdx[idx] != nil {
 			continue
 		}
-		seen[idx] = true
-		text := ps[idx]
-		p := Paragraph{P: idx + 1, Emotions: rp.Emotions.clamp(), Techniques: []Technique{},
+		byIdx[idx] = &Paragraph{P: idx + 1, Emotions: rp.Emotions.clamp(), Techniques: []Technique{},
 			LoadedLanguage: math.Max(0, math.Min(1, rp.LoadedLanguage))}
-		spans := map[[2]int]bool{}
+		order = append(order, idx)
 		for _, t := range rp.Techniques {
-			name := strings.ToLower(strings.TrimSpace(t.Technique))
-			if name == "" || name == "none" {
-				continue
-			}
-			if !techniqueSet[name] || t.Confidence < a.Weights.MinTechniqueConfidence {
-				res.dropped++
-				continue
-			}
-			sp, ok := quote.Find(text, t.Quote, 0)
-			if !ok {
-				res.dropped++
-				continue
-			}
-			key := [2]int{sp.Start16, sp.End16}
-			if spans[key] {
-				continue
-			}
-			spans[key] = true
-			p.Techniques = append(p.Techniques, Technique{Technique: name, Quote: sp.Quote,
-				Start: sp.Start16, End: sp.End16, Confidence: math.Min(1, t.Confidence)})
+			techs = append(techs, pending{idx, t})
 		}
+	}
+	spans := map[[3]int]bool{}
+	for _, pt := range techs {
+		t := pt.t
+		name := strings.ToLower(strings.TrimSpace(t.Technique))
+		if name == "" || name == "none" {
+			continue
+		}
+		if !techniqueSet[name] || t.Confidence < a.Weights.MinTechniqueConfidence {
+			res.dropped++
+			a.debugDrop("technique", pt.idx+1, name, t.Quote)
+			continue
+		}
+		target := pt.idx
+		sp, ok := quote.Find(ps[target], t.Quote, 0)
+		for j := b.first; !ok && j < b.first+b.n; j++ {
+			if j != pt.idx && byIdx[j] != nil {
+				if sp, ok = quote.Find(ps[j], t.Quote, 0); ok {
+					target = j
+				}
+			}
+		}
+		if !ok {
+			res.dropped++
+			a.debugDrop("quote", pt.idx+1, name, t.Quote)
+			continue
+		}
+		key := [3]int{target, sp.Start16, sp.End16}
+		if spans[key] {
+			continue
+		}
+		spans[key] = true
+		p := byIdx[target]
+		p.Techniques = append(p.Techniques, Technique{Technique: name, Quote: sp.Quote,
+			Start: sp.Start16, End: sp.End16, Confidence: math.Min(1, t.Confidence)})
+	}
+	for _, idx := range order {
+		p := byIdx[idx]
 		sort.Slice(p.Techniques, func(i, j int) bool { return p.Techniques[i].Start < p.Techniques[j].Start })
-		p.Score = a.Weights.paragraphScore(p)
-		res.paragraphs = append(res.paragraphs, p)
+		p.Score = a.Weights.paragraphScore(*p)
+		res.paragraphs = append(res.paragraphs, *p)
 	}
 	return res
+}
+
+func (a *Analyzer) debugDrop(reason string, p int, technique, q string) {
+	if a.Log != nil {
+		a.Log.Debug("dropped technique", "reason", reason, "p", p, "technique", technique, "quote", q)
+	}
 }
 
 func (a *Analyzer) runBlock(ctx context.Context, in Input, b block) (blockResult, error) {

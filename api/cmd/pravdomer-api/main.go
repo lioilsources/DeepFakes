@@ -51,7 +51,9 @@ func envDur(k string, def time.Duration) time.Duration {
 }
 
 func main() {
-	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	var level slog.Level
+	level.UnmarshalText([]byte(env("LOG_LEVEL", "info"))) //nolint:errcheck // invalid → info
+	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 	if err := run(log); err != nil {
 		log.Error("fatal", "err", err)
 		os.Exit(1)
@@ -101,7 +103,7 @@ func run(log *slog.Logger) error {
 		Store:   st,
 		Fetcher: extract.NewFetcher(env("BOT_USER_AGENT", defaultUA)),
 		Analyzer: &temperature.Analyzer{LLM: client, Model: model, Weights: weights,
-			Concurrency: envInt("LLM_CONCURRENCY", 4), BlockChars: envInt("LLM_BLOCK_CHARS", 2500), Now: time.Now, Log: log},
+			Concurrency: envInt("LLM_CONCURRENCY", 6), BlockChars: envInt("LLM_BLOCK_CHARS", 1200), Now: time.Now, Log: log},
 		Now: time.Now,
 		NewID: func() string {
 			idMu.Lock()
