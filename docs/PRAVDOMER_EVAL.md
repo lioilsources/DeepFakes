@@ -33,6 +33,16 @@ Skript: `bin/bench_llm.py`, prompty `llm_prompts/temperature.md` a `llm_prompts/
 
 Další na řadě (po schválení stažení): Qwen3.6-27B, Gemma 4 26B, Nemotron 3 Super (samostatné okno).
 
+## M1 — latence teploty (čeká na okno)
+
+`bin/m1_smoke.sh` (job 1112-193, po benchmarku): API lokálně, 15 článků z eval sady (5 CZ/SK/EN) přes URL, 2 souběžně. Měří čas do dokumentu, do prvního odstavce a do souhrnu, shodu detekce jazyka a počet zahozených citací.
+
+| Metrika | p50 | p95 | Datum |
+|---|---|---|---|
+| do dokumentu [s] | – | – | – |
+| do prvního odstavce [s] | – | – | – |
+| do souhrnu [s] | – | – | – |
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |
