@@ -7,3 +7,9 @@ import _ "embed"
 //
 //go:embed temperature.json
 var TemperatureJSON []byte
+
+// ClaimsJSON is the default configuration of claim checking (limits,
+// source weights, verdict thresholds).
+//
+//go:embed claims.json
+var ClaimsJSON []byte

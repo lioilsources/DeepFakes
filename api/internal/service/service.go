@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lioilsources/DeepFakes/api/internal/claims"
 	"github.com/lioilsources/DeepFakes/api/internal/extract"
 	"github.com/lioilsources/DeepFakes/api/internal/llm"
 	"github.com/lioilsources/DeepFakes/api/internal/quote"
@@ -42,6 +43,11 @@ type Analyzer interface {
 	Run(ctx context.Context, in temperature.Input, onParagraph func(temperature.Paragraph)) (temperature.Summary, error)
 }
 
+// ClaimChecker extracts and checks claims.
+type ClaimChecker interface {
+	Run(ctx context.Context, in claims.Input, onClaim func(claims.Claim), onVerdict func(claims.Verdict)) (claims.Summary, error)
+}
+
 // SubmitRequest is either a URL or pasted text.
 type SubmitRequest struct {
 	URL   string `json:"url"`
@@ -54,6 +60,7 @@ type Service struct {
 	Store      store.Store
 	Fetcher    Fetcher
 	Analyzer   Analyzer
+	Claims     ClaimChecker // nil disables claim checking
 	Now        func() time.Time
 	NewID      func() string
 	CacheTTL   time.Duration
@@ -253,31 +260,87 @@ func (s *Service) run(ctx context.Context, j job) error {
 	s.emit(j.id, "document", sd)
 	s.emit(j.id, "status", map[string]string{"status": "analyzing"})
 
-	var saveErr error
-	var once sync.Once
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	var (
+		saveErr error
+		once    sync.Once
+		wg      sync.WaitGroup
+		csum    *claims.Summary
+	)
+	setSaveErr := func(err error) {
+		once.Do(func() { saveErr = err })
+		cancel()
+	}
+	if s.Claims != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			csum = s.runClaims(ctx, j.id, doc, setSaveErr)
+		}()
+	}
 	sum, err := s.Analyzer.Run(ctx, temperature.Input{Title: doc.Title, Paragraphs: doc.Paragraphs}, func(p temperature.Paragraph) {
 		if err := s.Store.SaveParagraph(ctx, j.id, p); err != nil {
-			once.Do(func() { saveErr = err })
+			setSaveErr(err)
 			return
 		}
 		s.emit(j.id, "paragraph", p)
 	})
 	if err != nil {
-		return err
+		cancel()
 	}
+	wg.Wait()
 	if saveErr != nil {
 		return saveErr
+	}
+	if err != nil {
+		return err
 	}
 	if err := s.Store.SaveSummary(ctx, j.id, sum); err != nil {
 		return err
 	}
+	s.emit(j.id, "summary", sum)
+	if csum != nil {
+		s.emit(j.id, "claims_summary", csum)
+	}
 	if err := s.Store.SetStatus(ctx, j.id, store.StatusDone, nil, s.Now()); err != nil {
 		return err
 	}
-	s.emit(j.id, "summary", sum)
 	s.emit(j.id, "done", struct{}{})
 	s.hub.close(j.id)
 	return nil
+}
+
+// runClaims checks claims; failures end up in the claims summary, they do
+// not fail the analysis. A store error is reported through fail.
+func (s *Service) runClaims(ctx context.Context, id string, doc extract.Document, fail func(error)) *claims.Summary {
+	in := claims.Input{Title: doc.Title, Paragraphs: doc.Paragraphs, Language: doc.Language, URL: doc.URL}
+	sum, err := s.Claims.Run(ctx, in, func(c claims.Claim) {
+		if err := s.Store.SaveClaim(ctx, id, c); err != nil {
+			fail(err)
+			return
+		}
+		s.emit(id, "claim", c)
+	}, func(v claims.Verdict) {
+		if err := s.Store.SaveVerdict(ctx, id, v); err != nil {
+			fail(err)
+			return
+		}
+		s.emit(id, "verdict", v)
+	})
+	if ctx.Err() != nil {
+		return nil
+	}
+	if err != nil {
+		code, _ := errorCode(err)
+		s.Log.Warn("claims failed", "id", id, "err", err)
+		sum.Error = code
+	}
+	if err := s.Store.SaveClaimsSummary(ctx, id, sum); err != nil {
+		fail(err)
+		return nil
+	}
+	return &sum
 }
 
 // Subscribe returns past events and a channel of future ones. The channel
@@ -302,10 +365,21 @@ func replay(r store.Result) []Event {
 	for _, p := range r.Paragraphs {
 		ev = append(ev, Event{"paragraph", p})
 	}
+	for _, c := range r.Claims {
+		ev = append(ev, Event{"claim", c.Claim})
+	}
+	for _, c := range r.Claims {
+		if c.Verdict != nil {
+			ev = append(ev, Event{"verdict", c.Verdict})
+		}
+	}
 	switch r.Status {
 	case store.StatusDone:
 		if r.Summary != nil {
 			ev = append(ev, Event{"summary", r.Summary})
+		}
+		if r.ClaimsSummary != nil {
+			ev = append(ev, Event{"claims_summary", r.ClaimsSummary})
 		}
 		ev = append(ev, Event{"done", struct{}{}})
 	case store.StatusFailed:
