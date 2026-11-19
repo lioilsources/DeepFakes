@@ -8,6 +8,7 @@ For every passage decide its stance towards the claim:
 - "irrelevant": the passage does not address the claim, only mentions the topic, or is too vague to decide
 
 Same subject first: a passage can support or refute the claim only if it is about the same event, person, object, time and place as the claim. A passage about a different event (another date, place, person or incident), a bibliography or reference-list entry, a heading, or a table row without context is "irrelevant", even when it shares names, words or numbers. Older or newer data about the same subject (e.g. a previous election result) is "irrelevant" unless the claim is about that period. When in doubt, choose "irrelevant".
+"supports" needs the passage to state the claim's core assertion (what happened, how much, who did it), not just mention the same person or topic. If the claim has several parts, the passage must support the main one.
 
 For "supports" and "refutes" give "quote": the decisive sentence copied exactly, character by character, from that passage (max 300 chars, never from the claim or another passage), and "confidence" 0.0–1.0.
 A fact-check article that rates the claim false or misleading refutes it; one that rates it true supports it.

@@ -339,3 +339,14 @@ func TestSourceTypeAndSite(t *testing.T) {
 		t.Error("siteOf")
 	}
 }
+
+func TestAnchoredRejectsOffTopicQuotes(t *testing.T) {
+	cl := Claim{Claim: "Pracovník z Indie zarobí v Nitre viac", Entities: []string{"Nitra", "Tata Motors"}}
+	as := anchors(cl)
+	if anchored("Jednotné roľnícke družstvo Pata dosiahlo obrovský rast.", as) {
+		t.Error("off-topic quote accepted")
+	}
+	if !anchored("JLR opened a new plant in Nitra, Slovakia.", as) {
+		t.Error("cross-lingual quote with the same name rejected")
+	}
+}

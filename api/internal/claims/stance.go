@@ -43,11 +43,35 @@ type judged struct {
 	confidence float64
 }
 
+// anchors are the claim's distinctive stems: numbers and longer words.
+func anchors(cl Claim) map[string]bool {
+	out := map[string]bool{}
+	for _, t := range stems(cl.Claim + " " + cl.Quote + " " + strings.Join(cl.Entities, " ")) {
+		if isNumber(t) || len([]rune(t)) >= 4 {
+			out[t] = true
+		}
+	}
+	return out
+}
+
+// anchored reports whether the evidence quote shares at least one anchor
+// with the claim. It rejects judgements where the model quotes a sentence
+// about something else (a cheap guard, deliberately loose).
+func anchored(q string, as map[string]bool) bool {
+	for _, t := range stems(q) {
+		if as[t] {
+			return true
+		}
+	}
+	return false
+}
+
 // validateStance keeps supports/refutes judgements whose quote is verbatim
 // in the referenced passage (or, if misnumbered, in exactly the passage
 // where it is found).
-func validateStance(raw rawStance, ps []passage) (out []judged, dropped int) {
+func validateStance(cl Claim, raw rawStance, ps []passage) (out []judged, dropped, offTopic int) {
 	seen := map[int]bool{}
+	as := anchors(cl)
 	for _, j := range raw.Judgements {
 		st := strings.ToLower(strings.TrimSpace(j.Stance))
 		if st != StanceSupports && st != StanceRefutes {
@@ -70,16 +94,20 @@ func validateStance(raw rawStance, ps []passage) (out []judged, dropped int) {
 			dropped++
 			continue
 		}
+		if !anchored(sp.Quote, as) {
+			offTopic++
+			continue
+		}
 		if seen[idx] {
 			continue
 		}
 		seen[idx] = true
 		out = append(out, judged{p: ps[idx], stance: st, quote: sp.Quote, confidence: math.Max(0, math.Min(1, j.Confidence))})
 	}
-	return out, dropped
+	return out, dropped, offTopic
 }
 
-func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string) ([]judged, string, int, error) {
+func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string) ([]judged, string, int, int, error) {
 	req := llm.Request{System: stancePrompt, User: stanceMessage(cl, ps, lang), MaxTokens: 600 + 250*len(ps)}
 	var lastErr error
 	for attempt := 0; attempt < 2; attempt++ {
@@ -87,7 +115,7 @@ func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string
 		if err != nil {
 			lastErr = err
 			if ctx.Err() != nil {
-				return nil, "", 0, ctx.Err()
+				return nil, "", 0, 0, ctx.Err()
 			}
 			continue
 		}
@@ -96,12 +124,12 @@ func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string
 			lastErr = fmt.Errorf("decode model json: %w", err)
 			continue
 		}
-		js, dropped := validateStance(raw, ps)
+		js, dropped, off := validateStance(cl, raw, ps)
 		expl := strings.TrimSpace(raw.Explanation)
 		if len(js) == 0 {
 			expl = "" // no verdict, no narrative
 		}
-		return js, expl, dropped, nil
+		return js, expl, dropped, off, nil
 	}
-	return nil, "", 0, lastErr
+	return nil, "", 0, 0, lastErr
 }

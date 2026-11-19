@@ -80,3 +80,38 @@ bool _sameHits(List<TechniqueHit> a, List<TechniqueHit> b) {
   }
   return true;
 }
+
+/// Range of a claim quote in [text], or null when it cannot be placed. Uses
+/// the server offsets when they match the quote (always, per contract), falls
+/// back to searching for the quote, and to the bare offsets when the quote
+/// was purged.
+({int start, int end})? claimRange(String text, Claim c) {
+  final len = text.length;
+  if (len == 0) return null;
+  final s = _snap(text, c.start.clamp(0, len));
+  final e = _snap(text, c.end.clamp(0, len));
+  if (c.quote.isEmpty) return e > s ? (start: s, end: e) : null;
+  if (e > s && text.substring(s, e) == c.quote) return (start: s, end: e);
+  final i = text.indexOf(c.quote);
+  return i < 0 ? null : (start: i, end: i + c.quote.length);
+}
+
+/// Splits [segments] additionally at [start] and [end], so that a second
+/// highlight layer (the selected claim) can be styled per segment.
+List<HighlightSegment> splitSegments(
+  List<HighlightSegment> segments,
+  int start,
+  int end,
+) {
+  final out = <HighlightSegment>[];
+  for (final seg in segments) {
+    final cuts = <int>{seg.start, seg.end};
+    if (start > seg.start && start < seg.end) cuts.add(start);
+    if (end > seg.start && end < seg.end) cuts.add(end);
+    final points = cuts.toList()..sort();
+    for (var i = 0; i < points.length - 1; i++) {
+      out.add(HighlightSegment(points[i], points[i + 1], seg.hits));
+    }
+  }
+  return out;
+}

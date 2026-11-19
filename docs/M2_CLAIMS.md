@@ -21,6 +21,7 @@ Ověřování běží souběžně s teplotou. Appka dostává tvrzení i verdikt
 6. **Stance.**
    - Jedno volání LLM na tvrzení se všemi pasážemi. Model u každé pasáže řekne `supports`, `refutes` nebo `irrelevant` a k první dvojici přidá doslovnou citaci z té pasáže.
    - Citace se ověří proti staženému textu. Neplatná citace znamená, že důkaz neexistuje.
+   - Citace musí s tvrzením sdílet aspoň jedno číslo nebo delší slovo (kmen). Jinak jde nejspíš o větu o něčem jiném a důkaz se zahodí (`evidence_off_topic`).
    - Model nesmí použít vlastní znalosti, jen pasáže. Pasáž o jiné události, době nebo osobě (i se shodnými jmény a čísly), položka seznamu literatury nebo vytržený řádek tabulky jsou `irrelevant`.
 7. **Verdikt.** Počítá ho kód, ne model:
    - **Nezávislé zdroje.** Jedna doména tvoří jeden zdroj. Pasáže s Jaccardovou podobností trojic slov ≥ 0.5 (převzatá agenturní zpráva) se slijí do jednoho zdroje.

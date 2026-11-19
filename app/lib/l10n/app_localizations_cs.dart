@@ -309,4 +309,188 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get emotionNeutral => 'Neutrální';
+
+  @override
+  String get claimsTitle => 'Tvrzení';
+
+  @override
+  String get claimsIntro =>
+      'Ověřujeme jednotlivá tvrzení proti dohledaným zdrojům, ne autora ani médium. Ověření tvrzení a teplota textu jsou dvě nezávislé věci.';
+
+  @override
+  String get claimsSearching => 'Hledám tvrzení…';
+
+  @override
+  String get claimsNone => 'V textu jsme nenašli žádná tvrzení k ověření.';
+
+  @override
+  String get claimsFailed =>
+      'Ověřování tvrzení se nepodařilo dokončit. Teplota textu tím není dotčena.';
+
+  @override
+  String claimsSummaryLead(int count, int total) {
+    return '$count z $total tvrzení podloženo';
+  }
+
+  @override
+  String claimsCountMostlySupported(int count) {
+    return '$count převážně podloženo';
+  }
+
+  @override
+  String claimsCountDisputed(int count) {
+    return '$count sporné';
+  }
+
+  @override
+  String claimsCountRefuted(int count) {
+    return '$count vyvráceno';
+  }
+
+  @override
+  String claimsCountUnverifiable(int count) {
+    return '$count nelze ověřit';
+  }
+
+  @override
+  String claimsCountNotChecked(int count) {
+    return '$count neověřováno';
+  }
+
+  @override
+  String claimsNotCheckedTitle(int count) {
+    return 'Neověřovaná tvrzení ($count)';
+  }
+
+  @override
+  String get claimPurged => 'Text tvrzení už byl smazán.';
+
+  @override
+  String get claimShowInText => 'Ukázat v textu';
+
+  @override
+  String claimParagraph(int p) {
+    return '§ $p';
+  }
+
+  @override
+  String get verdictChecking => 'Ověřuje se…';
+
+  @override
+  String get verdictMissing => 'Bez výsledku';
+
+  @override
+  String get verdictSupported => 'Podloženo';
+
+  @override
+  String get verdictMostlySupported => 'Převážně podloženo';
+
+  @override
+  String get verdictDisputed => 'Sporné';
+
+  @override
+  String get verdictRefuted => 'Vyvráceno';
+
+  @override
+  String get verdictUnverifiable => 'Nelze ověřit';
+
+  @override
+  String get verdictNotChecked => 'Neověřováno';
+
+  @override
+  String get verdictUnverifiableInfo =>
+      'Dohledané zdroje nestačí k závěru. To neznamená, že tvrzení neplatí.';
+
+  @override
+  String verdictConfidence(int percent) {
+    return 'Odhad jistoty: $percent %';
+  }
+
+  @override
+  String get verdictConfidenceNote =>
+      'Odhad, zatím ne kalibrovaná pravděpodobnost.';
+
+  @override
+  String verdictSources(int independent, int considered) {
+    return 'Nezávislé zdroje: $independent z $considered';
+  }
+
+  @override
+  String get modelSummaryLabel => 'Shrnutí modelu';
+
+  @override
+  String evidenceTitle(int count) {
+    return 'Důkazy ($count)';
+  }
+
+  @override
+  String evidencePublished(String date) {
+    return 'zveřejněno $date';
+  }
+
+  @override
+  String factcheckRating(String publisher, String rating) {
+    return 'Hodnocení $publisher: $rating';
+  }
+
+  @override
+  String get linkOpenFailed => 'Odkaz se nepodařilo otevřít.';
+
+  @override
+  String get stanceSupports => 'podporuje';
+
+  @override
+  String get stanceRefutes => 'vyvrací';
+
+  @override
+  String get reasonOpinion => 'Názor, ten neověřujeme.';
+
+  @override
+  String get reasonPrediction => 'Předpověď, tu zatím nejde ověřit.';
+
+  @override
+  String get reasonLowPriority =>
+      'Méně podstatné tvrzení, neověřovali jsme ho.';
+
+  @override
+  String get reasonLimit => 'Nad limit ověřovaných tvrzení na článek.';
+
+  @override
+  String get reasonNoSources => 'Nenašli jsme žádné zdroje k tomuto tvrzení.';
+
+  @override
+  String get reasonNoRelevantEvidence =>
+      'Nalezené zdroje se k tvrzení přímo nevyjadřují.';
+
+  @override
+  String get reasonWeakEvidence =>
+      'Dohledané důkazy jsou na závěr příliš slabé.';
+
+  @override
+  String get reasonCheckFailed =>
+      'Ověření tohoto tvrzení se nepodařilo dokončit.';
+
+  @override
+  String get sourceFactChecker => 'Fact-checker';
+
+  @override
+  String get sourcePrimary => 'Primární zdroj';
+
+  @override
+  String get sourceEncyclopedia => 'Encyklopedie';
+
+  @override
+  String get sourceNews => 'Zpravodajství';
+
+  @override
+  String get sourceUnknown => 'Neznámý zdroj';
+
+  @override
+  String get kindFact => 'Fakt';
+
+  @override
+  String get kindOpinion => 'Názor';
+
+  @override
+  String get kindPrediction => 'Předpověď';
 }
