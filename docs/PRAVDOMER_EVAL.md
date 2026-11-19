@@ -49,6 +49,34 @@ Zjištění:
 - Plánovaných 1–5 s pro teplotu přes LLM nejde; realtime až s destilovaným enkodérem (M1b), viz M0 odhad.
 - Měření na Sparku (Qwen3.6-35B-A3B) je ve frontě brokeru (job 1112-193).
 
+## M2 — ověřování tvrzení (první smoke)
+
+`bin/m2_smoke.sh`: API lokálně (in-memory), 9 článků z eval sady (3 CZ/SK/EN) přes URL, 2 souběžně. 20. 11. 2026.
+
+**Podmínky běhu:**
+- **Model:** **L40S sandbox, `qwen3-coder`** (Qwen3-Coder-30B-A3B), jediný model, který tam zrovna běžel. Cílový Qwen3.6 na SPARKu nebyl dostupný.
+- **Hledání:** jen Wikipedie, bez klíčů pro Brave a Fact Check.
+- **Ruční kontrola:** jen orientační, ne eval proti anotacím.
+
+| Běh | tvrzení / ověřováno | do 1. verdiktu p50/p95 [s] | do souhrnu tvrzení p50/p95 [s] | neplatné citace v UI | zahozené citace (článek / zdroje) | verdikty |
+|---|---|---|---|---|---|---|
+| v1: první prompt | 77 / 48 | 40 / 66 | 50 / 85 | 0 | 2 / 7 | 11 převážně podl., 9 sporné, 28 nelze ověřit |
+| v3: pravidlo „stejná událost“, slabé vyvrácení = nelze ověřit, kotva citace | 85 / 48 | 33 / 63 | 39 / 79 | 0 | – / 5 | 14 převážně podl., 1 sporné, 33 nelze ověřit |
+
+**Zjištění:**
+- **Mechanika drží.** Žádná neplatná citace se nedostala ven: offsety tvrzení klient kontroluje proti textu a sedí všechny. SSE průběh i souhrn fungují a ověření přidá k teplotě ~40 s.
+- **Kvalita stance s `qwen3-coder` nestačí.** Z 15 verdiktů „převážně podloženo“ ve v3 je zhruba 8 v pořádku, zbytek ne:
+  - Model bere jako podporu text o jiné události, třeba bombový útok v Petrohradu v roce 2017 u tvrzení o výbuchu z roku 2026.
+  - Za podporu bere i jen zmínku stejné osoby nebo položku seznamu literatury.
+  - Pravidla v promptu pomohla hlavně u vyvracení: počet „sporných“ klesl z 9 na 1.
+- **Kotva citace nestačí.** Kontrola, že citace sdílí s tvrzením slovo nebo číslo, chytí jen hrubé případy.
+- **Zdroje.** Bez Brave je jediným zdrojem Wikipedie, takže čerstvé zprávy často končí „nelze ověřit“. Všechny články Wikipedie se počítají jako jeden zdroj, a tak nejlepší dosažitelný verdikt je „převážně podloženo“.
+- **Další krok:**
+  - Stejný běh s cílovým modelem na SPARKu a s Brave klíčem.
+  - Stance eval na CsFEVER.
+  - Ruční anotace verdiktů na Tier 1.
+  - Do té doby verdikty nezveřejňovat (gate kap. 10).
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |
