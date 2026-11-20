@@ -133,3 +133,32 @@ func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string
 	}
 	return nil, "", 0, 0, lastErr
 }
+
+// StanceResult is one judged passage, for offline evaluation.
+type StanceResult struct {
+	Passage    int     `json:"passage"` // 1-based
+	Stance     string  `json:"stance"`
+	Quote      string  `json:"quote"`
+	Confidence float64 `json:"confidence"`
+}
+
+// JudgeTexts runs the production stance step (prompt, quote gate, anchor
+// check) on plain passages. Used by cmd/stance-eval.
+func (c *Checker) JudgeTexts(ctx context.Context, claim, lang string, passages []string) ([]StanceResult, int, int, error) {
+	pg := &page{host: "eval"}
+	ps := make([]passage, len(passages))
+	idx := map[string]int{}
+	for i, t := range passages {
+		ps[i] = passage{page: pg, text: t}
+		idx[t] = i + 1
+	}
+	js, _, dropped, off, err := c.judge(ctx, Claim{Claim: claim}, ps, lang)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	out := make([]StanceResult, len(js))
+	for i, j := range js {
+		out[i] = StanceResult{Passage: idx[j.p.text], Stance: j.stance, Quote: j.quote, Confidence: j.confidence}
+	}
+	return out, dropped, off, nil
+}
