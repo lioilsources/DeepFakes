@@ -1,0 +1,2 @@
+{"name": "deepfake-m2-eval-qwen36-brave", "kind": "cmd", "profile": "off", "est_min": 90,
+ "cmd": "GUARD_MIN=150 /srv/work/deepfake/serve_qwen36.sh"}

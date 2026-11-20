@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import '../api/analysis_state.dart';
 import '../api/models.dart';
 import '../l10n/app_localizations.dart';
+import '../widgets/claims_section.dart';
 import '../widgets/emotion_bars.dart';
+import '../widgets/highlight_spans.dart';
 import '../widgets/error_messages.dart';
 import '../widgets/paragraph_tile.dart';
 import '../widgets/shimmer.dart';
@@ -29,6 +31,25 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen> {
   AnalysisState _state = const AnalysisState();
   StreamSubscription<AnalysisEvent>? _sub;
+  String? _selectedClaimId;
+  final _paragraphKeys = <int, GlobalKey>{};
+
+  GlobalKey _keyFor(int p) => _paragraphKeys.putIfAbsent(p, GlobalKey.new);
+
+  /// Highlights [claim]'s quote in its paragraph and scrolls there.
+  void _showClaim(Claim claim) {
+    setState(() => _selectedClaimId = claim.id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _paragraphKeys[claim.p]?.currentContext;
+      if (ctx == null || !ctx.mounted) return;
+      Scrollable.ensureVisible(
+        ctx,
+        alignment: 0.1,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
 
   @override
   void initState() {
@@ -52,6 +73,9 @@ class _ResultScreenState extends State<ResultScreen> {
         document: _state.document,
         results: _state.results,
         summary: _state.summary,
+        claims: _state.claims,
+        verdicts: _state.verdicts,
+        claimsSummary: _state.claimsSummary,
       );
     });
     _subscribe();
@@ -166,6 +190,14 @@ class _ResultScreenState extends State<ResultScreen> {
         title: l.techniquesTitle,
         child: TechniqueCounts(counts: s.techniqueCounts),
       ),
+      if (s.claims.isNotEmpty ||
+          s.claimsSummary != null ||
+          (doc != null && !s.finished))
+        ClaimsSection(
+          state: s,
+          selectedClaimId: _selectedClaimId,
+          onShowInText: _showClaim,
+        ),
       if (doc != null || !s.finished)
         Padding(
           padding: const EdgeInsets.only(top: 8, bottom: 4),
@@ -174,6 +206,7 @@ class _ResultScreenState extends State<ResultScreen> {
     ];
 
     final paragraphs = doc?.paragraphs ?? const <ParagraphText>[];
+    final selected = s.claims[_selectedClaimId];
     return Scaffold(
       appBar: AppBar(title: Text(l.resultTitle)),
       body: SafeArea(
@@ -189,12 +222,24 @@ class _ResultScreenState extends State<ResultScreen> {
                   ? SliverList.list(
                       children: [if (!s.finished) const ShimmerLines(lines: 6)],
                     )
-                  : SliverList.builder(
-                      itemCount: paragraphs.length,
-                      itemBuilder: (context, i) => ParagraphTile(
-                        paragraph: paragraphs[i],
-                        result: s.results[paragraphs[i].p],
-                        finished: s.finished,
+                  // Not lazy: tapping a claim must be able to scroll to any
+                  // paragraph, which needs its context.
+                  : SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          for (final p in paragraphs)
+                            KeyedSubtree(
+                              key: _keyFor(p.p),
+                              child: ParagraphTile(
+                                paragraph: p,
+                                result: s.results[p.p],
+                                finished: s.finished,
+                                mark: selected != null && selected.p == p.p
+                                    ? claimRange(p.text, selected)
+                                    : null,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
             ),

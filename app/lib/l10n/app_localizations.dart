@@ -619,6 +619,306 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Neutral'**
   String get emotionNeutral;
+
+  /// No description provided for @claimsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Claims'**
+  String get claimsTitle;
+
+  /// No description provided for @claimsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'We check individual claims against sources we find, not the author or the outlet. Claim checks and text temperature are two independent things.'**
+  String get claimsIntro;
+
+  /// No description provided for @claimsSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for claims…'**
+  String get claimsSearching;
+
+  /// No description provided for @claimsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No claims to check were found in the text.'**
+  String get claimsNone;
+
+  /// No description provided for @claimsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim checking could not be completed. The text temperature is not affected.'**
+  String get claimsFailed;
+
+  /// No description provided for @claimsSummaryLead.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total} claims supported'**
+  String claimsSummaryLead(int count, int total);
+
+  /// No description provided for @claimsCountMostlySupported.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} mostly supported'**
+  String claimsCountMostlySupported(int count);
+
+  /// No description provided for @claimsCountDisputed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} disputed'**
+  String claimsCountDisputed(int count);
+
+  /// No description provided for @claimsCountRefuted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} refuted'**
+  String claimsCountRefuted(int count);
+
+  /// No description provided for @claimsCountUnverifiable.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} cannot be verified'**
+  String claimsCountUnverifiable(int count);
+
+  /// No description provided for @claimsCountNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} not checked'**
+  String claimsCountNotChecked(int count);
+
+  /// No description provided for @claimsNotCheckedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked ({count})'**
+  String claimsNotCheckedTitle(int count);
+
+  /// No description provided for @claimPurged.
+  ///
+  /// In en, this message translates to:
+  /// **'The claim text has been deleted.'**
+  String get claimPurged;
+
+  /// No description provided for @claimShowInText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in text'**
+  String get claimShowInText;
+
+  /// No description provided for @claimParagraph.
+  ///
+  /// In en, this message translates to:
+  /// **'§ {p}'**
+  String claimParagraph(int p);
+
+  /// No description provided for @verdictChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking…'**
+  String get verdictChecking;
+
+  /// No description provided for @verdictMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No result'**
+  String get verdictMissing;
+
+  /// No description provided for @verdictSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Supported'**
+  String get verdictSupported;
+
+  /// No description provided for @verdictMostlySupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Mostly supported'**
+  String get verdictMostlySupported;
+
+  /// No description provided for @verdictDisputed.
+  ///
+  /// In en, this message translates to:
+  /// **'Disputed'**
+  String get verdictDisputed;
+
+  /// No description provided for @verdictRefuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Refuted'**
+  String get verdictRefuted;
+
+  /// No description provided for @verdictUnverifiable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot verify'**
+  String get verdictUnverifiable;
+
+  /// No description provided for @verdictNotChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked'**
+  String get verdictNotChecked;
+
+  /// No description provided for @verdictUnverifiableInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'The sources found are not enough for a conclusion. This does not mean the claim is false.'**
+  String get verdictUnverifiableInfo;
+
+  /// No description provided for @verdictConfidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated confidence: {percent} %'**
+  String verdictConfidence(int percent);
+
+  /// No description provided for @verdictConfidenceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'An estimate, not yet a calibrated probability.'**
+  String get verdictConfidenceNote;
+
+  /// No description provided for @verdictSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Independent sources: {independent} of {considered}'**
+  String verdictSources(int independent, int considered);
+
+  /// No description provided for @modelSummaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model summary'**
+  String get modelSummaryLabel;
+
+  /// No description provided for @evidenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence ({count})'**
+  String evidenceTitle(int count);
+
+  /// No description provided for @evidencePublished.
+  ///
+  /// In en, this message translates to:
+  /// **'published {date}'**
+  String evidencePublished(String date);
+
+  /// No description provided for @factcheckRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating by {publisher}: {rating}'**
+  String factcheckRating(String publisher, String rating);
+
+  /// No description provided for @linkOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The link could not be opened.'**
+  String get linkOpenFailed;
+
+  /// No description provided for @stanceSupports.
+  ///
+  /// In en, this message translates to:
+  /// **'supports'**
+  String get stanceSupports;
+
+  /// No description provided for @stanceRefutes.
+  ///
+  /// In en, this message translates to:
+  /// **'refutes'**
+  String get stanceRefutes;
+
+  /// No description provided for @reasonOpinion.
+  ///
+  /// In en, this message translates to:
+  /// **'An opinion; we do not check those.'**
+  String get reasonOpinion;
+
+  /// No description provided for @reasonPrediction.
+  ///
+  /// In en, this message translates to:
+  /// **'A prediction; it cannot be checked yet.'**
+  String get reasonPrediction;
+
+  /// No description provided for @reasonLowPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'A less important claim; we did not check it.'**
+  String get reasonLowPriority;
+
+  /// No description provided for @reasonLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Over the limit of checked claims per article.'**
+  String get reasonLimit;
+
+  /// No description provided for @reasonNoSources.
+  ///
+  /// In en, this message translates to:
+  /// **'We found no sources for this claim.'**
+  String get reasonNoSources;
+
+  /// No description provided for @reasonNoRelevantEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'The sources found do not address the claim directly.'**
+  String get reasonNoRelevantEvidence;
+
+  /// No description provided for @reasonWeakEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'The evidence found is too weak for a conclusion.'**
+  String get reasonWeakEvidence;
+
+  /// No description provided for @reasonCheckFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking this claim could not be completed.'**
+  String get reasonCheckFailed;
+
+  /// No description provided for @sourceFactChecker.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact-checker'**
+  String get sourceFactChecker;
+
+  /// No description provided for @sourcePrimary.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary source'**
+  String get sourcePrimary;
+
+  /// No description provided for @sourceEncyclopedia.
+  ///
+  /// In en, this message translates to:
+  /// **'Encyclopedia'**
+  String get sourceEncyclopedia;
+
+  /// No description provided for @sourceNews.
+  ///
+  /// In en, this message translates to:
+  /// **'News'**
+  String get sourceNews;
+
+  /// No description provided for @sourceUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown source'**
+  String get sourceUnknown;
+
+  /// No description provided for @kindFact.
+  ///
+  /// In en, this message translates to:
+  /// **'Fact'**
+  String get kindFact;
+
+  /// No description provided for @kindOpinion.
+  ///
+  /// In en, this message translates to:
+  /// **'Opinion'**
+  String get kindOpinion;
+
+  /// No description provided for @kindPrediction.
+  ///
+  /// In en, this message translates to:
+  /// **'Prediction'**
+  String get kindPrediction;
 }
 
 class _AppLocalizationsDelegate

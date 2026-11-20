@@ -20,6 +20,23 @@ type Analysis struct {
 	FinishedAt   pgtype.Timestamptz
 }
 
+type Claim struct {
+	AnalysisID  string
+	ClaimID     string
+	P           int32
+	Kind        string
+	Checkworthy float32
+	Data        []byte
+	Label       pgtype.Text
+	Verdict     []byte
+}
+
+type ClaimsSummary struct {
+	AnalysisID string
+	Method     string
+	Summary    []byte
+}
+
 type Document struct {
 	AnalysisID  string
 	Url         pgtype.Text

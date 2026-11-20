@@ -49,6 +49,87 @@ Zjištění:
 - Plánovaných 1–5 s pro teplotu přes LLM nejde; realtime až s destilovaným enkodérem (M1b), viz M0 odhad.
 - Měření na Sparku (Qwen3.6-35B-A3B) je ve frontě brokeru (job 1112-193).
 
+## M2 — ověřování tvrzení (první smoke)
+
+`bin/m2_smoke.sh`: API lokálně (in-memory), 9 článků z eval sady (3 CZ/SK/EN) přes URL, 2 souběžně. 20. 11. 2026.
+
+**Podmínky běhu:**
+- **Model:** **L40S sandbox, `qwen3-coder`** (Qwen3-Coder-30B-A3B), jediný model, který tam zrovna běžel. Cílový Qwen3.6 na SPARKu nebyl dostupný.
+- **Hledání:** jen Wikipedie, bez klíčů pro Brave a Fact Check.
+- **Ruční kontrola:** jen orientační, ne eval proti anotacím.
+
+| Běh | tvrzení / ověřováno | do 1. verdiktu p50/p95 [s] | do souhrnu tvrzení p50/p95 [s] | neplatné citace v UI | zahozené citace (článek / zdroje) | verdikty |
+|---|---|---|---|---|---|---|
+| v1: první prompt | 77 / 48 | 40 / 66 | 50 / 85 | 0 | 2 / 7 | 11 převážně podl., 9 sporné, 28 nelze ověřit |
+| v3: pravidlo „stejná událost“, slabé vyvrácení = nelze ověřit, kotva citace | 85 / 48 | 33 / 63 | 39 / 79 | 0 | – / 5 | 14 převážně podl., 1 sporné, 33 nelze ověřit |
+
+**Zjištění:**
+- **Mechanika drží.** Žádná neplatná citace se nedostala ven: offsety tvrzení klient kontroluje proti textu a sedí všechny. SSE průběh i souhrn fungují a ověření přidá k teplotě ~40 s.
+- **Kvalita stance s `qwen3-coder` nestačí.** Z 15 verdiktů „převážně podloženo“ ve v3 je zhruba 8 v pořádku, zbytek ne:
+  - Model bere jako podporu text o jiné události, třeba bombový útok v Petrohradu v roce 2017 u tvrzení o výbuchu z roku 2026.
+  - Za podporu bere i jen zmínku stejné osoby nebo položku seznamu literatury.
+  - Pravidla v promptu pomohla hlavně u vyvracení: počet „sporných“ klesl z 9 na 1.
+- **Kotva citace nestačí.** Kontrola, že citace sdílí s tvrzením slovo nebo číslo, chytí jen hrubé případy.
+- **Zdroje.** Bez Brave je jediným zdrojem Wikipedie, takže čerstvé zprávy často končí „nelze ověřit“. Všechny články Wikipedie se počítají jako jeden zdroj, a tak nejlepší dosažitelný verdikt je „převážně podloženo“.
+- **Další krok:**
+  - Stejný běh s cílovým modelem na SPARKu a s Brave klíčem.
+  - Stance eval na CsFEVER.
+  - Ruční anotace verdiktů na Tier 1.
+  - Do té doby verdikty nezveřejňovat (gate kap. 10).
+
+### M2 s cílovým modelem (Qwen3.6-35B-A3B-FP8 na L40S)
+
+20. 11. 2026. Okno `deepfake-m2-eval-qwen36` ve frontě L40S (qctl, `bin/l40s/`). vLLM s max-model-len 16k, fp8 KV, bez obrazového vstupu. Spouští `bin/m2_l40s_eval.sh`.
+
+**Stance na CsFEVER v2** (`original_nli/test`, CC BY-SA 3.0, `api/cmd/stance-eval`):
+- Vzorek: 300 párů, po 100 na label, seed 1120.
+- Prošly produkčním krokem: stejný prompt, ověření citace a kontrola kotvy.
+- Jedna pasáž = evidence z CsFEVER, `irrelevant` se počítá jako NEI.
+
+| | precision | recall | F1 |
+|---|---|---|---|
+| supports | 0,82 | 0,61 | 0,70 |
+| refutes | 0,75 | 0,66 | 0,70 |
+| irrelevant (NEI) | 0,56 | 0,77 | 0,65 |
+| **accuracy / macro F1** | | | **0,68 / 0,68** |
+
+Zjištění ke stance:
+- **Opatrnost.** Model je spíš opatrný. Chyby jdou hlavně do „irrelevant“: 35 ze 60 minutých podpor a vyvrácení jde na vrub modelu.
+- **Gate.** Zbylých 25 zahodil gate: 11 neplatných citací a 17 případů, kdy citace nesdílela s tvrzením kotvu. Typicky jde o transliteraci jmen, např. „Sejong“ v tvrzení a „Sedžong“ v evidenci. To je vědomá cena za tvrdý gate.
+- **Falešné závěry.** U NEI párů dal model 15× „refutes“ a 8× „supports“.
+- **Rychlost.** 300 párů za 77 s, tedy ~4 páry/s při 16 souběžných dotazech.
+
+**Smoke na 9 článcích:** stejné články a stejná podmínka jako výše, tedy jen Wikipedie bez Brave.
+
+| Běh | tvrzení / ověřováno | do 1. verdiktu p50/p95 [s] | do souhrnu tvrzení p50/p95 [s] | neplatné citace v UI | verdikty |
+|---|---|---|---|---|---|
+| Qwen3.6 FP8 | 67 / 50 | 22 / 34 | 31 / 48 | 0 | 10 převážně podl., 40 nelze ověřit |
+
+Zjištění ke smoke:
+- **Přesnost.** Ručně z 10 verdiktů „převážně podloženo“ sedí zhruba 8–9. S `qwen3-coder` to bylo ~8 z 15.
+- **Bez falešných vyvrácení.** Žádné „sporné“ ani „vyvrácené“ bez opory.
+- **Chyba, která zbyla:** citace o jiném podílu („Democrat won less than 40 %“) u tvrzení o 40 % černých voličů.
+- **Rychlost.** O ~30 % rychlejší než coder model.
+- **Nelze ověřit.** 80 % „nelze ověřit“ jsou čerstvé zprávy, které Wikipedie nemá. Čeká se na Brave.
+
+**Smoke s Brave a Google Fact Check** (20. 11., okno `deepfake-m2-eval-qwen36-brave`, stejné články):
+
+| Běh | tvrzení / ověřováno | do 1. verdiktu p50/p95 [s] | do souhrnu tvrzení p50/p95 [s] | evidence | verdikty |
+|---|---|---|---|---|---|
+| jen Wikipedie | 67 / 50 | 22 / 34 | 31 / 48 | 36 | 10 převážně podl., 40 nelze ověřit |
+| + Brave, Fact Check | 67 / 51 | 26 / 36 | 36 / 44 | 57 | 2 podl., 12 převážně, 1 sporné, 2 vyvrácené, 34 nelze ověřit |
+
+Zjištění:
+- **Zdroje.** Evidence: 33 encyklopedie, 20 neznámé domény, 4 zpravodajství. Fact Check pro tato tvrzení nic nenašel.
+- **Rozpočet Brave.** `BRAVE_DAILY_LIMIT=30` došel uprostřed běhu (76 dotazů odmítnuto). Plně by 9 článků chtělo ~106 dotazů Brave, tedy ~12 na článek. Při 30 denně to stačí na 2–3 články.
+- **Podloženo a převážně podloženo:** ručně sedí ~13 ze 14. Slabé je jen „Likely Republican“ podle Cooka, kde zdroj zmiňuje jen kritiku prognóz.
+- **Sporné (1):** obhajitelné.
+- **Vyvrácené (2): obě chybně.** To je nejhorší směr chyby.
+  - Finidr: tvrzení „3,1 milionu knih měsíčně“ proti „přes 30 milionů za rok“. Jiná jednotka času, čísla jsou ve skutečnosti v souladu.
+  - Rottrová: zdroje se rozcházejí (Stuttgart 1988–1990 vs. do 1992). Mělo být sporné, poměr S/R 0,32 je těsně pod prahem 0,35. Část zdrojů jsou přepisy téže zprávy v jiném jazyce, které shingly nespojí.
+- **Další krok:** stance prompt musí brát jiný časový úsek nebo jednotku jako „irrelevant“, ne „refutes“. Shlukování přepisů napříč jazyky přijde s embeddingy.
+- **Stance CsFEVER (opakování):** accuracy 0,68, macro F1 0,685, stejné jako minule.
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |

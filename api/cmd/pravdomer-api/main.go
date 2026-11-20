@@ -19,9 +19,11 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/lioilsources/DeepFakes/api/config"
+	"github.com/lioilsources/DeepFakes/api/internal/claims"
 	"github.com/lioilsources/DeepFakes/api/internal/extract"
 	"github.com/lioilsources/DeepFakes/api/internal/httpapi"
 	"github.com/lioilsources/DeepFakes/api/internal/llm"
+	"github.com/lioilsources/DeepFakes/api/internal/search"
 	"github.com/lioilsources/DeepFakes/api/internal/service"
 	"github.com/lioilsources/DeepFakes/api/internal/store"
 	"github.com/lioilsources/DeepFakes/api/internal/temperature"
@@ -97,11 +99,17 @@ func run(log *slog.Logger) error {
 	client := &llm.Client{BaseURL: env("LLM_BASE_URL", "http://localhost:8080/v1"), APIKey: os.Getenv("LLM_API_KEY"),
 		Model: model, HTTP: &http.Client{Timeout: envDur("LLM_TIMEOUT", 3*time.Minute)}}
 
+	ua := env("BOT_USER_AGENT", defaultUA)
+	checker, err := newChecker(log, client, model, ua)
+	if err != nil {
+		return err
+	}
+
 	var idMu sync.Mutex
 	entropy := ulid.Monotonic(rand.Reader, 0)
 	svc := &service.Service{
 		Store:   st,
-		Fetcher: extract.NewFetcher(env("BOT_USER_AGENT", defaultUA)),
+		Fetcher: extract.NewFetcher(ua),
 		Analyzer: &temperature.Analyzer{LLM: client, Model: model, Weights: weights,
 			Concurrency: envInt("LLM_CONCURRENCY", 6), BlockChars: envInt("LLM_BLOCK_CHARS", 1200), Now: time.Now, Log: log},
 		Now: time.Now,
@@ -113,6 +121,9 @@ func run(log *slog.Logger) error {
 		CacheTTL:   envDur("CACHE_TTL", 7*24*time.Hour),
 		JobTimeout: envDur("JOB_TIMEOUT", 10*time.Minute),
 		Log:        log,
+	}
+	if checker != nil {
+		svc.Claims = checker
 	}
 	svc.Start(ctx, envInt("WORKERS", 4), envInt("QUEUE_SIZE", 200))
 	go svc.PurgeLoop(ctx, time.Hour)
@@ -137,4 +148,39 @@ func run(log *slog.Logger) error {
 		return fmt.Errorf("listen: %w", err)
 	}
 	return nil
+}
+
+// newChecker configures claim checking from env; nil when CLAIMS=off.
+func newChecker(log *slog.Logger, client *llm.Client, model, ua string) (*claims.Checker, error) {
+	if env("CLAIMS", "on") == "off" {
+		log.Warn("claim checking disabled (CLAIMS=off)")
+		return nil, nil
+	}
+	cfgJSON := config.ClaimsJSON
+	if p := os.Getenv("CLAIMS_CONFIG"); p != "" {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return nil, fmt.Errorf("read claims config: %w", err)
+		}
+		cfgJSON = b
+	}
+	cfg, err := claims.ParseConfig(cfgJSON)
+	if err != nil {
+		return nil, err
+	}
+	hc := &http.Client{Timeout: 15 * time.Second}
+	c := &claims.Checker{LLM: client, Model: model, Config: cfg, Fetcher: extract.NewFetcher(ua), Now: time.Now, Log: log}
+	if k := os.Getenv("GOOGLE_FACTCHECK_API_KEY"); k != "" {
+		c.FactCheck = &search.FactCheckAPI{APIKey: k, HTTP: hc}
+	}
+	if k := os.Getenv("BRAVE_API_KEY"); k != "" {
+		// Brave bills per query; the daily cap keeps the monthly free credit.
+		c.Providers = append(c.Providers, &search.Budget{Provider: &search.Brave{APIKey: k, HTTP: hc},
+			PerDay: envInt("BRAVE_DAILY_LIMIT", 30), Now: time.Now})
+	}
+	if env("WIKIPEDIA", "on") != "off" {
+		c.Providers = append(c.Providers, &search.Wikipedia{UserAgent: ua, HTTP: hc})
+	}
+	log.Info("claim checking", "providers", len(c.Providers), "factcheck", c.FactCheck != nil, "method", cfg.Method)
+	return c, nil
 }

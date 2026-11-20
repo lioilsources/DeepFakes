@@ -16,10 +16,14 @@ class ParagraphTile extends StatelessWidget {
     required this.paragraph,
     this.result,
     this.finished = false,
+    this.mark,
   });
 
   final ParagraphText paragraph;
   final ParagraphResult? result;
+
+  /// Selected claim quote, drawn in a style distinct from techniques.
+  final ({int start, int end})? mark;
 
   /// The stream ended; a missing result means the paragraph failed, so stop
   /// shimmering and show the plain text.
@@ -48,11 +52,16 @@ class ParagraphTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            if (r != null)
-              HighlightedText(text: paragraph.text, hits: r.techniques)
+            if (r != null || mark != null)
+              HighlightedText(
+                text: paragraph.text,
+                hits: r?.techniques ?? const [],
+                mark: mark,
+              )
             else if (finished)
-              Text(paragraph.text, style: theme.textTheme.bodyLarge)
-            else ...[
+              Text(paragraph.text, style: theme.textTheme.bodyLarge),
+            if (r == null && !finished) ...[
+              const SizedBox(height: 6),
               Text(
                 l.paragraphPending(paragraph.p),
                 style: theme.textTheme.bodySmall,
@@ -94,10 +103,19 @@ class _ScoreBadge extends StatelessWidget {
 /// Paragraph text with tappable highlights for technique quotes. Overlapping
 /// quotes are drawn darker; a tap lists every technique covering that run.
 class HighlightedText extends StatefulWidget {
-  const HighlightedText({super.key, required this.text, required this.hits});
+  const HighlightedText({
+    super.key,
+    required this.text,
+    required this.hits,
+    this.mark,
+  });
 
   final String text;
   final List<TechniqueHit> hits;
+
+  /// Claim quote range (UTF-16 offsets) highlighted with a solid underline
+  /// and the primary colour; techniques use a dotted tertiary style.
+  final ({int start, int end})? mark;
 
   @override
   State<HighlightedText> createState() => _HighlightedTextState();
@@ -125,12 +143,23 @@ class _HighlightedTextState extends State<HighlightedText> {
     final theme = Theme.of(context);
     final base = theme.textTheme.bodyLarge ?? const TextStyle();
     final hl = theme.colorScheme.tertiary;
-    final segments = buildHighlightSegments(widget.text, widget.hits);
+    final mark = widget.mark;
+    var segments = buildHighlightSegments(widget.text, widget.hits);
+    if (mark != null) segments = splitSegments(segments, mark.start, mark.end);
+    final markColor = theme.colorScheme.primary;
+    final markStyle = TextStyle(
+      backgroundColor: markColor.withValues(alpha: 0.22),
+      decoration: TextDecoration.underline,
+      decorationColor: markColor,
+      decorationStyle: TextDecorationStyle.solid,
+      decorationThickness: 2.5,
+    );
     final spans = <InlineSpan>[];
     for (final s in segments) {
       final text = s.textOf(widget.text);
+      final marked = mark != null && s.start >= mark.start && s.end <= mark.end;
       if (!s.highlighted) {
-        spans.add(TextSpan(text: text));
+        spans.add(TextSpan(text: text, style: marked ? markStyle : null));
         continue;
       }
       final recognizer = TapGestureRecognizer()
@@ -141,12 +170,14 @@ class _HighlightedTextState extends State<HighlightedText> {
         TextSpan(
           text: text,
           recognizer: recognizer,
-          style: TextStyle(
-            backgroundColor: hl.withValues(alpha: alpha),
-            decoration: TextDecoration.underline,
-            decorationColor: hl,
-            decorationStyle: TextDecorationStyle.dotted,
-          ),
+          style: marked
+              ? markStyle
+              : TextStyle(
+                  backgroundColor: hl.withValues(alpha: alpha),
+                  decoration: TextDecoration.underline,
+                  decorationColor: hl,
+                  decorationStyle: TextDecorationStyle.dotted,
+                ),
         ),
       );
     }

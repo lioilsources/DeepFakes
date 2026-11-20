@@ -80,6 +80,29 @@ class PravdomerClient {
     );
   }
 
+  /// `GET /v1/analyses/{id}`: the stored result (also after the stream ended).
+  Future<AnalysisResult> getAnalysis(String id) async {
+    final http.Response resp;
+    try {
+      resp = await _http.get(
+        _uri('/v1/analyses/${Uri.encodeComponent(id)}'),
+        headers: _headers,
+      );
+    } on Exception catch (e) {
+      throw ApiException('network', message: e.toString());
+    }
+    if (resp.statusCode == 200) {
+      final j = _decodeMap(utf8.decode(resp.bodyBytes));
+      if (j == null) throw ApiException('internal', status: resp.statusCode);
+      return AnalysisResult.fromJson(j);
+    }
+    throw _errorFrom(
+      resp.statusCode,
+      resp.headers,
+      utf8.decode(resp.bodyBytes),
+    );
+  }
+
   /// Streams events of analysis [id]. Reconnects when the connection drops
   /// before `done`/`error`; the server replays all events, and the consumer
   /// state is idempotent, so duplicates are harmless. Always ends with

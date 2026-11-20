@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/lioilsources/DeepFakes/api/internal/claims"
 	"github.com/lioilsources/DeepFakes/api/internal/store/db"
 	"github.com/lioilsources/DeepFakes/api/internal/temperature"
 )
@@ -160,6 +161,75 @@ func (s *Postgres) SaveSummary(ctx context.Context, id string, sum temperature.S
 	return nil
 }
 
+func (s *Postgres) SaveClaim(ctx context.Context, id string, c claims.Claim) error {
+	b, err := json.Marshal(c)
+	if err != nil {
+		return fmt.Errorf("marshal claim: %w", err)
+	}
+	err = s.q.SaveClaim(ctx, db.SaveClaimParams{AnalysisID: id, ClaimID: c.ID, P: int32(c.P), Kind: c.Kind,
+		Checkworthy: float32(c.Checkworthy), Data: b})
+	if err != nil {
+		return fmt.Errorf("save claim: %w", err)
+	}
+	return nil
+}
+
+func (s *Postgres) SaveVerdict(ctx context.Context, id string, v claims.Verdict) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Errorf("marshal verdict: %w", err)
+	}
+	if err := s.q.SaveVerdict(ctx, db.SaveVerdictParams{AnalysisID: id, ClaimID: v.ClaimID, Label: txt(v.Label), Verdict: b}); err != nil {
+		return fmt.Errorf("save verdict: %w", err)
+	}
+	return nil
+}
+
+func (s *Postgres) SaveClaimsSummary(ctx context.Context, id string, sum claims.Summary) error {
+	b, err := json.Marshal(sum)
+	if err != nil {
+		return fmt.Errorf("marshal claims summary: %w", err)
+	}
+	if err := s.q.SaveClaimsSummary(ctx, db.SaveClaimsSummaryParams{AnalysisID: id, Method: sum.Method, Summary: b}); err != nil {
+		return fmt.Errorf("save claims summary: %w", err)
+	}
+	return nil
+}
+
+func (s *Postgres) getClaims(ctx context.Context, id string, r *Result) error {
+	rows, err := s.q.ListClaims(ctx, id)
+	if err != nil {
+		return fmt.Errorf("list claims: %w", err)
+	}
+	for _, row := range rows {
+		var c ClaimResult
+		if err := json.Unmarshal(row.Data, &c.Claim); err != nil {
+			return fmt.Errorf("decode claim: %w", err)
+		}
+		if len(row.Verdict) > 0 {
+			var v claims.Verdict
+			if err := json.Unmarshal(row.Verdict, &v); err != nil {
+				return fmt.Errorf("decode verdict: %w", err)
+			}
+			c.Verdict = &v
+		}
+		r.Claims = append(r.Claims, c)
+	}
+	cs, err := s.q.GetClaimsSummary(ctx, id)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+	case err != nil:
+		return fmt.Errorf("get claims summary: %w", err)
+	default:
+		var sum claims.Summary
+		if err := json.Unmarshal(cs.Summary, &sum); err != nil {
+			return fmt.Errorf("decode claims summary: %w", err)
+		}
+		r.ClaimsSummary = &sum
+	}
+	return nil
+}
+
 func (s *Postgres) Get(ctx context.Context, id string) (Result, error) {
 	a, err := s.q.GetAnalysis(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -168,7 +238,7 @@ func (s *Postgres) Get(ctx context.Context, id string) (Result, error) {
 	if err != nil {
 		return Result{}, fmt.Errorf("get analysis: %w", err)
 	}
-	r := Result{ID: a.ID, Status: a.Status, Paragraphs: []temperature.Paragraph{}}
+	r := Result{ID: a.ID, Status: a.Status, Paragraphs: []temperature.Paragraph{}, Claims: []ClaimResult{}}
 	if a.ErrorCode.Valid {
 		r.Error = &Error{Code: a.ErrorCode.String, Message: a.ErrorMessage.String}
 	}
@@ -217,6 +287,9 @@ func (s *Postgres) Get(ctx context.Context, id string) (Result, error) {
 		}
 		r.Summary = &s
 	}
+	if err := s.getClaims(ctx, id, &r); err != nil {
+		return Result{}, err
+	}
 	return r, nil
 }
 
@@ -234,6 +307,9 @@ func (s *Postgres) Purge(ctx context.Context, cutoff, at time.Time) (int, error)
 	if len(ids) > 0 {
 		if err := q.StripQuotes(ctx, ids); err != nil {
 			return 0, fmt.Errorf("strip quotes: %w", err)
+		}
+		if err := q.StripClaims(ctx, ids); err != nil {
+			return 0, fmt.Errorf("strip claims: %w", err)
 		}
 	}
 	if err := tx.Commit(ctx); err != nil {
