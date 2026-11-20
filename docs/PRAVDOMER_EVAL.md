@@ -77,6 +77,41 @@ Zjištění:
   - Ruční anotace verdiktů na Tier 1.
   - Do té doby verdikty nezveřejňovat (gate kap. 10).
 
+### M2 s cílovým modelem (Qwen3.6-35B-A3B-FP8 na L40S)
+
+20. 11. 2026. Okno `deepfake-m2-eval-qwen36` ve frontě L40S (qctl, `bin/l40s/`). vLLM s max-model-len 16k, fp8 KV, bez obrazového vstupu. Spouští `bin/m2_l40s_eval.sh`.
+
+**Stance na CsFEVER v2** (`original_nli/test`, CC BY-SA 3.0, `api/cmd/stance-eval`):
+- Vzorek: 300 párů, po 100 na label, seed 1120.
+- Prošly produkčním krokem: stejný prompt, ověření citace a kontrola kotvy.
+- Jedna pasáž = evidence z CsFEVER, `irrelevant` se počítá jako NEI.
+
+| | precision | recall | F1 |
+|---|---|---|---|
+| supports | 0,82 | 0,61 | 0,70 |
+| refutes | 0,75 | 0,66 | 0,70 |
+| irrelevant (NEI) | 0,56 | 0,77 | 0,65 |
+| **accuracy / macro F1** | | | **0,68 / 0,68** |
+
+Zjištění ke stance:
+- **Opatrnost.** Model je spíš opatrný. Chyby jdou hlavně do „irrelevant“: 35 ze 60 minutých podpor a vyvrácení jde na vrub modelu.
+- **Gate.** Zbylých 25 zahodil gate: 11 neplatných citací a 17 případů, kdy citace nesdílela s tvrzením kotvu. Typicky jde o transliteraci jmen, např. „Sejong“ v tvrzení a „Sedžong“ v evidenci. To je vědomá cena za tvrdý gate.
+- **Falešné závěry.** U NEI párů dal model 15× „refutes“ a 8× „supports“.
+- **Rychlost.** 300 párů za 77 s, tedy ~4 páry/s při 16 souběžných dotazech.
+
+**Smoke na 9 článcích:** stejné články a stejná podmínka jako výše, tedy jen Wikipedie bez Brave.
+
+| Běh | tvrzení / ověřováno | do 1. verdiktu p50/p95 [s] | do souhrnu tvrzení p50/p95 [s] | neplatné citace v UI | verdikty |
+|---|---|---|---|---|---|
+| Qwen3.6 FP8 | 67 / 50 | 22 / 34 | 31 / 48 | 0 | 10 převážně podl., 40 nelze ověřit |
+
+Zjištění ke smoke:
+- **Přesnost.** Ručně z 10 verdiktů „převážně podloženo“ sedí zhruba 8–9. S `qwen3-coder` to bylo ~8 z 15.
+- **Bez falešných vyvrácení.** Žádné „sporné“ ani „vyvrácené“ bez opory.
+- **Chyba, která zbyla:** citace o jiném podílu („Democrat won less than 40 %“) u tvrzení o 40 % černých voličů.
+- **Rychlost.** O ~30 % rychlejší než coder model.
+- **Nelze ověřit.** 80 % „nelze ověřit“ jsou čerstvé zprávy, které Wikipedie nemá. Čeká se na Brave.
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |
