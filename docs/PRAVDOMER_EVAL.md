@@ -112,6 +112,24 @@ Zjištění ke smoke:
 - **Rychlost.** O ~30 % rychlejší než coder model.
 - **Nelze ověřit.** 80 % „nelze ověřit“ jsou čerstvé zprávy, které Wikipedie nemá. Čeká se na Brave.
 
+**Smoke s Brave a Google Fact Check** (20. 11., okno `deepfake-m2-eval-qwen36-brave`, stejné články):
+
+| Běh | tvrzení / ověřováno | do 1. verdiktu p50/p95 [s] | do souhrnu tvrzení p50/p95 [s] | evidence | verdikty |
+|---|---|---|---|---|---|
+| jen Wikipedie | 67 / 50 | 22 / 34 | 31 / 48 | 36 | 10 převážně podl., 40 nelze ověřit |
+| + Brave, Fact Check | 67 / 51 | 26 / 36 | 36 / 44 | 57 | 2 podl., 12 převážně, 1 sporné, 2 vyvrácené, 34 nelze ověřit |
+
+Zjištění:
+- **Zdroje.** Evidence: 33 encyklopedie, 20 neznámé domény, 4 zpravodajství. Fact Check pro tato tvrzení nic nenašel.
+- **Rozpočet Brave.** `BRAVE_DAILY_LIMIT=30` došel uprostřed běhu (76 dotazů odmítnuto). Plně by 9 článků chtělo ~106 dotazů Brave, tedy ~12 na článek. Při 30 denně to stačí na 2–3 články.
+- **Podloženo a převážně podloženo:** ručně sedí ~13 ze 14. Slabé je jen „Likely Republican“ podle Cooka, kde zdroj zmiňuje jen kritiku prognóz.
+- **Sporné (1):** obhajitelné.
+- **Vyvrácené (2): obě chybně.** To je nejhorší směr chyby.
+  - Finidr: tvrzení „3,1 milionu knih měsíčně“ proti „přes 30 milionů za rok“. Jiná jednotka času, čísla jsou ve skutečnosti v souladu.
+  - Rottrová: zdroje se rozcházejí (Stuttgart 1988–1990 vs. do 1992). Mělo být sporné, poměr S/R 0,32 je těsně pod prahem 0,35. Část zdrojů jsou přepisy téže zprávy v jiném jazyce, které shingly nespojí.
+- **Další krok:** stance prompt musí brát jiný časový úsek nebo jednotku jako „irrelevant“, ne „refutes“. Shlukování přepisů napříč jazyky přijde s embeddingy.
+- **Stance CsFEVER (opakování):** accuracy 0,68, macro F1 0,685, stejné jako minule.
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |

@@ -13,6 +13,7 @@ Same subject first: a passage can support or refute the claim only if it is abou
 For "supports" and "refutes" give "quote": the decisive sentence copied exactly, character by character, from that passage (max 300 chars, never from the claim or another passage), and "confidence" 0.0–1.0.
 A fact-check article that rates the claim false or misleading refutes it; one that rates it true supports it.
 Partial agreement (e.g. the event happened but the number differs) is "refutes" for the differing detail.
+"refutes" needs the same quantity for the same period, unit and scope. A number over a different period or scope (per year vs per month, a region vs the whole country, another year) is "irrelevant", even if it looks different. When sources disagree with each other, judge each passage on its own; do not pick a side.
 
 Then write "explanation": 1–2 sentences in the language given in LANG that summarise what the relevant passages say about the claim, citing passages as [n]. Mention only what the passages say. If all passages are irrelevant, the explanation is an empty string.
 
