@@ -159,6 +159,14 @@ Zjištění:
 - **Oprava:** encyklopedie datum nedostanou.
 - **Latence:** do souhrnu tvrzení p50 49 s / p95 68 s. Bylo víc tvrzení a sdílená GPU, podmínky nejsou stejné.
 
+**Bez data u encyklopedií** (22. 11., okno `deepfake-m2-eval-qwen36-dates2`):
+- **Verdikty (smoke):** 3 podl., 12 převážně, 2 sporné, 0 vyvrácených, 36 nelze ověřit. Ručně sedí podloženo a převážně ~14 z 15.
+- **CsFEVER:** accuracy 0,687, macro F1 0,693, refutes P 0,86 / R 0,60. V šumu proti minulému běhu.
+- **Latence:** do 1. verdiktu p50 30 s, do souhrnu p50 40 s / p95 68 s.
+- **Mississippi:** pořád „sporné“, i bez data stránky. Skutečná příčina: tvrzení „Mississippi 40 let nezvolilo demokrata“ platí k datu článku, ale zdroje už popisují Colomovo vítězství. Novější události nemají vyvracet tvrzení o stavu k CLAIM_DATE. Kandidát na další úpravu promptu, případně extrakce („před volbami 2026“).
+- **Rottrová:** „sporné“, odpovídá zdrojům.
+- **Souhrn řady 20.–22. 11.:** vyvrácení z 2 chybných na 0, CsFEVER refutes precision 0,76 → 0,86 při recallu 0,67 → 0,60.
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |

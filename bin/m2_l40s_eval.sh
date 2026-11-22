@@ -6,7 +6,7 @@ set -u
 cd "$(dirname "$0")/.."
 R=/srv/work/deepfake
 until ssh tcloud "test -e $R/DF_READY"; do
-  ssh tcloud "~/bin/qctl ls" 2>/dev/null | grep -q "failed .*deepfake-m2-eval-qwen36-dates" && { echo "window job failed"; exit 1; }
+  ssh tcloud "~/bin/qctl ls" 2>/dev/null | grep -q "failed .*deepfake-m2-eval-qwen36-dates2" && { echo "window job failed"; exit 1; }
   sleep 60
 done
 echo "window ready $(date)"
