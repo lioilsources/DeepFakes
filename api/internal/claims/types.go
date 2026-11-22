@@ -141,6 +141,16 @@ type Config struct {
 		Refuted              float64 `json:"refuted"`
 		DisputeRatio         float64 `json:"dispute_ratio"`
 		NearDuplicateJaccard float64 `json:"near_duplicate_jaccard"`
+		// RefutedNeedsKnownSource: "refuted" needs at least one refuting
+		// source whose type is not "unknown" (an agency site plus a company
+		// catalogue is not enough to call a claim false).
+		RefutedNeedsKnownSource bool `json:"refuted_needs_known_source"`
+		// LaterRefuteGraceHours: a refutation from a page published more
+		// than this many hours after the claim was made is dropped (later
+		// events do not refute a statement about the situation at that
+		// time). Fact-checkers and primary sources (official denials) are
+		// exempt. Negative disables the rule.
+		LaterRefuteGraceHours int `json:"later_refute_grace_hours"`
 	} `json:"verdict"`
 }
 

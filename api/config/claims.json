@@ -78,6 +78,8 @@
     "mostly_supported": 0.6,
     "refuted": 0.85,
     "dispute_ratio": 0.35,
-    "near_duplicate_jaccard": 0.5
+    "near_duplicate_jaccard": 0.5,
+    "refuted_needs_known_source": true,
+    "later_refute_grace_hours": 1
   }
 }

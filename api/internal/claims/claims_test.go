@@ -334,6 +334,13 @@ func TestAggregate(t *testing.T) {
 			judgedOf(c, "b.irozhlas.cz", "p q r s", StanceSupports, 1)}, LabelMostlySupported, 1},
 		{"fact-checker refutes", []judged{judgedOf(c, "demagog.cz", "nepravda", StanceRefutes, 0.9)}, LabelRefuted, 1},
 		{"one news refutation is weak", []judged{judgedOf(c, "irozhlas.cz", "jinak", StanceRefutes, 0.95)}, LabelUnverifiable, 1},
+		{"refutation only from unknown sites is not enough (Finidr)", []judged{
+			judgedOf(c, "tomas-svoboda.com", "alpha beta gamma delta", StanceRefutes, 0.95),
+			judgedOf(c, "5264-cz.all.biz", "one two three four", StanceRefutes, 0.9)}, LabelUnverifiable, 2},
+		{"unknown plus news refutes", []judged{
+			judgedOf(c, "tomas-svoboda.com", "alpha beta gamma delta", StanceRefutes, 0.95),
+			judgedOf(c, "irozhlas.cz", "one two three four", StanceRefutes, 0.9)}, LabelRefuted, 2},
+		{"primary source refutes alone", []judged{judgedOf(c, "czso.cz", "jinak", StanceRefutes, 0.9)}, LabelRefuted, 1},
 		{"both sides", []judged{
 			judgedOf(c, "czso.cz", "one two three four", StanceSupports, 0.9),
 			judgedOf(c, "demagog.cz", "five six seven eight", StanceRefutes, 0.9)}, LabelDisputed, 2},
@@ -396,5 +403,34 @@ func TestStanceMessageCarriesDates(t *testing.T) {
 		if !strings.Contains(m, want) {
 			t.Errorf("missing %q in %q", want, m)
 		}
+	}
+}
+
+func TestLaterThanClaim(t *testing.T) {
+	c := cfg(t)
+	d := func(s string) *time.Time { x, _ := time.Parse(time.RFC3339, s); return &x }
+	claim := d("2026-11-12T08:42:00Z") // Petrohrad: refutations came 2-6 h later
+	cases := []struct {
+		name, typ  string
+		pub, claim *time.Time
+		want       bool
+	}{
+		{"news hours later", "news", d("2026-11-12T11:18:00Z"), claim, true},
+		{"unknown site hours later", "unknown", d("2026-11-12T14:18:00Z"), claim, true},
+		{"within grace", "news", d("2026-11-12T09:30:00Z"), claim, false},
+		{"earlier", "unknown", d("2026-10-01T00:00:00Z"), claim, false},
+		{"fact-checker exempt", "fact_checker", d("2026-11-20T00:00:00Z"), claim, false},
+		{"official denial exempt", "primary", d("2026-11-12T12:00:00Z"), claim, false},
+		{"unknown page date", "news", nil, claim, false},
+		{"unknown claim date", "news", d("2026-11-12T11:18:00Z"), nil, false},
+	}
+	for _, tc := range cases {
+		if got := c.laterThanClaim(&page{sourceType: tc.typ, published: tc.pub}, tc.claim); got != tc.want {
+			t.Errorf("%s: got %v", tc.name, got)
+		}
+	}
+	c.Verdict.LaterRefuteGraceHours = -1
+	if c.laterThanClaim(&page{sourceType: "news", published: d("2026-12-01T00:00:00Z")}, claim) {
+		t.Error("negative grace must disable the rule")
 	}
 }

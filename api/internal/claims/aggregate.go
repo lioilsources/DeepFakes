@@ -41,7 +41,10 @@ func (c *Config) aggregate(cl Claim, js []judged, considered int) Verdict {
 			}
 		}
 	}
-	type agg struct{ sup, ref float64 }
+	type agg struct {
+		sup, ref float64
+		known    bool // refuted by a source whose type is not "unknown"
+	}
 	clusters := map[int]*agg{}
 	ids := map[int]int{}
 	for i, j := range js {
@@ -56,6 +59,7 @@ func (c *Config) aggregate(cl Claim, js []judged, considered int) Verdict {
 			a.sup = math.Max(a.sup, w)
 		} else {
 			a.ref = math.Max(a.ref, w)
+			a.known = a.known || j.p.page.sourceType != "unknown"
 		}
 		pg := j.p.page
 		e := Evidence{URL: pg.url, Title: pg.title, Site: pg.host, SourceType: pg.sourceType, Stance: j.stance,
@@ -66,9 +70,11 @@ func (c *Config) aggregate(cl Claim, js []judged, considered int) Verdict {
 		}
 		v.Evidence = append(v.Evidence, e)
 	}
+	knownRefuter := !c.Verdict.RefutedNeedsKnownSource
 	for _, a := range clusters {
 		v.Support += a.sup
 		v.Refute += a.ref
+		knownRefuter = knownRefuter || (a.ref > 0 && a.known)
 	}
 	v.IndependentSources = len(clusters)
 	sort.SliceStable(v.Evidence, func(i, k int) bool { return v.Evidence[i].Weight > v.Evidence[k].Weight })
@@ -86,10 +92,11 @@ func (c *Config) aggregate(cl Claim, js []judged, considered int) Verdict {
 		v.Label = LabelMostlySupported
 	case s > r:
 		v.Label, v.Reason = LabelUnverifiable, "weak_evidence"
-	case r >= t.Refuted:
+	case r >= t.Refuted && knownRefuter:
 		v.Label = LabelRefuted
 	default:
-		// A weak refutation alone is not enough to call a claim disputed.
+		// A weak refutation, or one resting only on unknown sources, is not
+		// enough: a false "refuted" is the worst error.
 		v.Label, v.Reason = LabelUnverifiable, "weak_evidence"
 	}
 	if v.Label != LabelUnverifiable {

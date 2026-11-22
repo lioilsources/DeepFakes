@@ -24,6 +24,7 @@ Ověřování běží souběžně s teplotou. Appka dostává tvrzení i verdikt
    - Citace musí s tvrzením sdílet aspoň jedno číslo nebo delší slovo (kmen). Jinak jde nejspíš o větu o něčem jiném a důkaz se zahodí (`evidence_off_topic`).
    - **Datum.** Model dostane datum článku (`CLAIM_DATE`, jinak den analýzy) a datum každé stránky. Encyklopedie datum nedostanou: datum stránky Wikipedie je den založení článku, ne doba, kdy fakta vznikla, a model mátlo. Měnící se veličiny (výroba, počty, ceny, funkce) se posuzují k datu tvrzení. Starší údaj je `irrelevant`, ne `refutes`, protože číslo se mohlo prostě změnit.
    - **Kontrola vyvrácení.** Každé `refutes` projde druhým krátkým dotazem (`llm_prompts/refute.md`): jde o stejnou veličinu za stejné období, ve stejné jednotce a rozsahu a opravdu nemůže platit současně s tvrzením? Když ne, nebo když dotaz selže, důkaz se zahodí (`refutes_rejected`) a vysvětlení modelu se nezobrazí. Samotné pravidlo ve stance promptu nestačilo, model dál bral roční součet jako vyvrácení měsíčního čísla.
+   - **Pozdější zdroj nevyvrací.** Vyvracející pasáž ze stránky publikované víc než `later_refute_grace_hours` (1 h) po čase tvrzení se zahodí ještě před kontrolou vyvrácení (počítá se do `refutes_rejected`). Taková stránka může popisovat pozdější vývoj, který nemění stav k času tvrzení (Petrohrad: „příčina je nejasná“ ráno, nálož pod autem odpoledne). Výjimkou jsou fact-checkery (vycházejí po tvrzení vždy) a primární zdroje (oficiální dementi). Stránky bez data zůstávají. Cena: zpravodajské vyvrácení, které vyjde až po tvrzení, se nepočítá. Raději „nelze ověřit“ než falešné „vyvráceno“.
    - Model nesmí použít vlastní znalosti, jen pasáže. Pasáž o jiné události, době nebo osobě (i se shodnými jmény a čísly), položka seznamu literatury nebo vytržený řádek tabulky jsou `irrelevant`.
 7. **Verdikt.** Počítá ho kód, ne model:
    - **Nezávislé zdroje.** Jedna doména tvoří jeden zdroj. Pasáže s Jaccardovou podobností trojic slov ≥ 0.5 (převzatá agenturní zpráva) se slijí do jednoho zdroje.
@@ -35,7 +36,7 @@ Ověřování běží souběžně s teplotou. Appka dostává tvrzení i verdikt
      - `max(S, R) < 0.3` → `unverifiable`.
      - Obě strany ≥ 0.3 a slabší je aspoň 35 % silnější → `disputed`.
      - Jinak podle převahy: `S ≥ 1.2` → `supported`, `S ≥ 0.6` → `mostly_supported`. Slabší podpora → `unverifiable` (`weak_evidence`).
-     - Když převažuje `R`: `R ≥ 0.85` → `refuted`, jinak `unverifiable` (`weak_evidence`).
+     - Když převažuje `R`: `R ≥ 0.85` a aspoň jeden vyvracející zdroj není typu `unknown` (`refuted_needs_known_source`) → `refuted`, jinak `unverifiable` (`weak_evidence`). Dva neznámé weby (Finidr: web agentury a katalog firem) na vyvrácení nestačí.
      - Jeden zpravodajský zdroj tedy tvrzení podloží nejvýš „převážně“ a sám ho nevyvrátí. Jeden fact-checker nebo primární zdroj s vysokou jistotou ho vyvrátit umí. Asymetrie je záměrná: označit tvrzení za vyvrácené je silnější výrok a chce víc.
    - **Jistota** je zatím heuristika. Kalibrace na eval sadě je úkol M2 eval (cíl z kap. 10: když appka říká 80 %, má mít pravdu v ~80 %).
 8. **Vysvětlení.** Model ve stejném volání napíše 1–2 věty v jazyce dokumentu jen z pasáží. U `unverifiable` se nezobrazuje.

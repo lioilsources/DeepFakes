@@ -172,6 +172,10 @@ func (c *Checker) confirmRefutes(ctx context.Context, cl Claim, js []judged, cla
 			out = append(out, j)
 			continue
 		}
+		if c.Config.laterThanClaim(j.p.page, claimDate) {
+			rejected++
+			continue
+		}
 		ok, err := c.contradicts(ctx, cl, j, claimDate)
 		if err != nil && ctx.Err() != nil {
 			return nil, 0, ctx.Err()
@@ -183,6 +187,20 @@ func (c *Checker) confirmRefutes(ctx context.Context, cl Claim, js []judged, cla
 		out = append(out, j)
 	}
 	return out, rejected, nil
+}
+
+// laterThanClaim reports whether a page was published after the claim was
+// made (plus grace). Such a page may describe later events, which do not
+// refute a statement about the situation at that time. Fact-checkers (they
+// come after the claim by nature) and primary sources (official denials)
+// are exempt. Pages without a date are kept.
+func (c Config) laterThanClaim(pg *page, claimDate *time.Time) bool {
+	g := c.Verdict.LaterRefuteGraceHours
+	if g < 0 || claimDate == nil || claimDate.IsZero() || pg.published == nil || pg.published.IsZero() ||
+		pg.sourceType == "fact_checker" || pg.sourceType == "primary" {
+		return false
+	}
+	return pg.published.After(claimDate.Add(time.Duration(g) * time.Hour))
 }
 
 func (c *Checker) contradicts(ctx context.Context, cl Claim, j judged, claimDate *time.Time) (bool, error) {
