@@ -136,6 +136,20 @@ Zjištění:
 - CsFEVER: accuracy 0,683, macro F1 0,689, precision refutes 0,79. V mezích šumu.
 - Proto vznikla samostatná kontrola vyvrácení (`llm_prompts/refute.md`, viz `docs/M2_CLAIMS.md`).
 
+**S kontrolou vyvrácení** (22. 11., okno `deepfake-m2-eval-qwen36-refute`):
+
+| Běh | verdikty (smoke) | CsFEVER acc / macro F1 | refutes P / R | NEI → refutes |
+|---|---|---|---|---|
+| Brave, původní prompt | 2 podl., 12 převážně, 1 sporné, 2 vyvrácené, 34 nelze ověřit | 0,68 / 0,685 | 0,76 / 0,67 | 16 |
+| + pravidlo v promptu | 2 / 11 / 1 / 2 / 32 | 0,683 / 0,689 | 0,79 / 0,64 | 16 |
+| + kontrola vyvrácení | 2 / 12 / 2 / 1 / 29 | 0,683 / 0,687 | 0,82 / 0,59 | 9 |
+
+- **CsFEVER.** Kontrola zahodila 13 vyvrácení. Falešných vyvrácení u NEI ubylo ze 16 na 9, za cenu 5 bodů recallu refutes. Tuhle výměnu chceme.
+- **Rottrová.** Teď „sporné“, což odpovídá rozcházejícím se zdrojům.
+- **Finidr, měsíční náklad.** Pořád „vyvráceno“, ale z jiného důvodu: starší zdroje uvádějí 16–24 milionů ročně, tedy méně než 3,1 milionu měsíčně. Model převedl jednotky, proti zadání. Skutečný problém je **stáří dat**: starší čísla o rostoucí firmě nejsou vyvrácení. Další krok je dát do stance datum zdroje a článku, aby starší údaj šel do „irrelevant“.
+- **Finidr, 500miliontá kniha.** „Sporné“: Wikipedie uvádí červen 2026, web tiskárny 19. 6. 2025. Zdroje se opravdu rozcházejí.
+- **Latence.** Do souhrnu tvrzení p50 44 s, předtím 39 s. Navíc je jedno volání na každé „refutes“.
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |
