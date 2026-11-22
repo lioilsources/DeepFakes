@@ -21,6 +21,9 @@ var extractPrompt string
 //go:embed stance.md
 var stancePrompt string
 
+//go:embed refute.md
+var refutePrompt string
+
 // Chatter is the LLM dependency.
 type Chatter interface {
 	ChatJSON(ctx context.Context, r llm.Request) (string, llm.Usage, error)

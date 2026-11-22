@@ -105,6 +105,7 @@ type Summary struct {
 	QuotesDropped         int            `json:"quotes_dropped"`
 	EvidenceQuotesDropped int            `json:"evidence_quotes_dropped"`
 	EvidenceOffTopic      int            `json:"evidence_off_topic"`
+	RefutesRejected       int            `json:"refutes_rejected"`
 	Searches              int            `json:"searches"`
 	SearchErrors          int            `json:"search_errors"`
 	PagesFetched          int            `json:"pages_fetched"`

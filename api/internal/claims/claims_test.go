@@ -29,7 +29,7 @@ func cfg(t *testing.T) Config {
 }
 
 func TestPromptsInSync(t *testing.T) {
-	for _, f := range []struct{ name, embedded string }{{"claims.md", extractPrompt}, {"stance.md", stancePrompt}} {
+	for _, f := range []struct{ name, embedded string }{{"claims.md", extractPrompt}, {"stance.md", stancePrompt}, {"refute.md", refutePrompt}} {
 		b, err := os.ReadFile("../../../llm_prompts/" + f.name)
 		if err != nil {
 			t.Fatal(err)
@@ -52,6 +52,7 @@ type fakeLLM struct {
 	mu       sync.Mutex
 	extract  string
 	stance   func(user string) string
+	refute   func(user string) string // nil: every refutation is confirmed
 	failAll  bool
 	stanceNo int
 }
@@ -64,6 +65,12 @@ func (f *fakeLLM) ChatJSON(_ context.Context, r llm.Request) (string, llm.Usage,
 	}
 	if r.System == extractPrompt {
 		return f.extract, llm.Usage{}, nil
+	}
+	if r.System == refutePrompt {
+		if f.refute == nil {
+			return `{"contradicts": true}`, llm.Usage{}, nil
+		}
+		return f.refute(r.User), llm.Usage{}, nil
 	}
 	f.stanceNo++
 	return f.stance(r.User), llm.Usage{}, nil
@@ -260,6 +267,35 @@ func TestFactCheckFirstAndTyped(t *testing.T) {
 	}
 	if sum.Providers[0] != "factcheck" {
 		t.Errorf("providers %v", sum.Providers)
+	}
+}
+
+// A refutation the focused check does not confirm (e.g. a yearly total
+// against a monthly figure) is dropped, and the claim stays unverifiable.
+func TestUnconfirmedRefutationDropped(t *testing.T) {
+	pages := fakeFetcher{"https://demagog.cz/vyrok/1": article("Výrok", "Výrok je nepravdivý: schodek rozpočtu nebyl 230 miliard korun, ale 280 miliard korun.")}
+	fc := &fakeProvider{name: "factcheck", hits: map[string][]search.Hit{
+		"Vláda schválila rozpočet se schodkem 230 miliard korun.": {{URL: "https://demagog.cz/vyrok/1", FactCheck: &search.FactCheck{Publisher: "Demagog.cz", Rating: "Nepravda"}}},
+	}}
+	var asked string
+	l := &fakeLLM{extract: extractJSON,
+		stance: func(string) string {
+			return `{"judgements":[{"id":1,"stance":"refutes","quote":"schodek rozpočtu nebyl 230 miliard korun, ale 280 miliard korun","confidence":1}],"explanation":"[1] uvádí 280 miliard."}`
+		},
+		refute: func(u string) string { asked = u; return `{"contradicts": false, "reason": "other period"}` },
+	}
+	_, vs, sum, err := collect(t, newChecker(t, l, &fakeProvider{name: "web"}, fc, pages), Input{Paragraphs: doc, Language: "cs"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v := vs["c1"]; v.Label != LabelUnverifiable || v.Explanation != "" || len(v.Evidence) != 0 {
+		t.Fatalf("%+v", v)
+	}
+	if sum.RefutesRejected != 1 {
+		t.Errorf("refutes_rejected=%d", sum.RefutesRejected)
+	}
+	if !strings.Contains(asked, "<quote>schodek rozpočtu nebyl 230 miliard korun") || !strings.Contains(asked, "<claim>") {
+		t.Errorf("refute check input: %q", asked)
 	}
 }
 

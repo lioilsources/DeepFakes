@@ -130,6 +130,12 @@ Zjištění:
 - **Další krok:** stance prompt musí brát jiný časový úsek nebo jednotku jako „irrelevant“, ne „refutes“. Shlukování přepisů napříč jazyky přijde s embeddingy.
 - **Stance CsFEVER (opakování):** accuracy 0,68, macro F1 0,685, stejné jako minule.
 
+**Pravidlo o období a jednotce ve stance promptu** (22. 11., okno `deepfake-m2-eval-qwen36-stance2`): nepomohlo.
+- Smoke: 2 podl., 11 převážně, 1 sporné, 2 vyvrácené, 32 nelze ověřit. Obě vyvrácení zůstala.
+- Finidr teď model „vyvrací“ dokonce ročním číslem z roku 2020.
+- CsFEVER: accuracy 0,683, macro F1 0,689, precision refutes 0,79. V mezích šumu.
+- Proto vznikla samostatná kontrola vyvrácení (`llm_prompts/refute.md`, viz `docs/M2_CLAIMS.md`).
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |

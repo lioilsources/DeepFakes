@@ -22,6 +22,7 @@ Ověřování běží souběžně s teplotou. Appka dostává tvrzení i verdikt
    - Jedno volání LLM na tvrzení se všemi pasážemi. Model u každé pasáže řekne `supports`, `refutes` nebo `irrelevant` a k první dvojici přidá doslovnou citaci z té pasáže.
    - Citace se ověří proti staženému textu. Neplatná citace znamená, že důkaz neexistuje.
    - Citace musí s tvrzením sdílet aspoň jedno číslo nebo delší slovo (kmen). Jinak jde nejspíš o větu o něčem jiném a důkaz se zahodí (`evidence_off_topic`).
+   - **Kontrola vyvrácení.** Každé `refutes` projde druhým krátkým dotazem (`llm_prompts/refute.md`): jde o stejnou veličinu za stejné období, ve stejné jednotce a rozsahu a opravdu nemůže platit současně s tvrzením? Když ne, nebo když dotaz selže, důkaz se zahodí (`refutes_rejected`) a vysvětlení modelu se nezobrazí. Samotné pravidlo ve stance promptu nestačilo, model dál bral roční součet jako vyvrácení měsíčního čísla.
    - Model nesmí použít vlastní znalosti, jen pasáže. Pasáž o jiné události, době nebo osobě (i se shodnými jmény a čísly), položka seznamu literatury nebo vytržený řádek tabulky jsou `irrelevant`.
 7. **Verdikt.** Počítá ho kód, ne model:
    - **Nezávislé zdroje.** Jedna doména tvoří jeden zdroj. Pasáže s Jaccardovou podobností trojic slov ≥ 0.5 (převzatá agenturní zpráva) se slijí do jednoho zdroje.
@@ -50,7 +51,7 @@ Ověřování běží souběžně s teplotou. Appka dostává tvrzení i verdikt
 
 - **Brave:** jeden dotaz na každou kombinaci dotazu a poskytovatele, tj. až 3 na tvrzení a 18 na článek. `BRAVE_DAILY_LIMIT` (výchozí 30) drží měsíční kredit zdarma. Po vyčerpání pokračuje jen Wikipedie a Fact Check.
 - **Wikipedie:** bez klíče, s UA podle pravidel Wikimedia.
-- **LLM:** jedno volání na blok extrakce a jedno na každé ověřované tvrzení.
+- **LLM:** jedno volání na blok extrakce, jedno na každé ověřované tvrzení a jedno na každé `refutes`.
 
 ## Co chybí (další kroky M2)
 

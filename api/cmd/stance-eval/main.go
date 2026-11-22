@@ -32,12 +32,11 @@ type item struct {
 var gold = []string{"supports", "refutes", "irrelevant"}
 
 type row struct {
-	ID        int                   `json:"id"`
-	Gold      string                `json:"gold"`
-	Pred      string                `json:"pred"`
-	Conf      float64               `json:"confidence"`
-	Dropped   int                   `json:"quotes_dropped"`
-	OffTopic  int                   `json:"off_topic"`
+	ID   int     `json:"id"`
+	Gold string  `json:"gold"`
+	Pred string  `json:"pred"`
+	Conf float64 `json:"confidence"`
+	claims.JudgeStats
 	Error     string                `json:"error,omitempty"`
 	LatencyMS int64                 `json:"latency_ms"`
 	Results   []claims.StanceResult `json:"results,omitempty"`
@@ -111,8 +110,8 @@ func run(log *slog.Logger, in, out string, perLabel, conc, maxChars int, seed ui
 				ev = ev[:maxChars]
 			}
 			t0 := time.Now()
-			res, dropped, off, err := ch.JudgeTexts(ctx, it.Claim, "cs", []string{string(ev)})
-			r := row{ID: it.ID, Gold: gold[it.Label], Pred: "irrelevant", Dropped: dropped, OffTopic: off,
+			res, st, err := ch.JudgeTexts(ctx, it.Claim, "cs", []string{string(ev)})
+			r := row{ID: it.ID, Gold: gold[it.Label], Pred: "irrelevant", JudgeStats: st,
 				LatencyMS: time.Since(t0).Milliseconds(), Results: res}
 			if err != nil {
 				r.Error, r.Pred = err.Error(), "error"
@@ -138,7 +137,7 @@ func run(log *slog.Logger, in, out string, perLabel, conc, maxChars int, seed ui
 	jf.Close()
 
 	conf := map[string]map[string]int{}
-	correct, errs, dropped, off := 0, 0, 0, 0
+	correct, errs, dropped, off, rej := 0, 0, 0, 0, 0
 	for _, r := range rows {
 		if conf[r.Gold] == nil {
 			conf[r.Gold] = map[string]int{}
@@ -152,6 +151,7 @@ func run(log *slog.Logger, in, out string, perLabel, conc, maxChars int, seed ui
 		}
 		dropped += r.Dropped
 		off += r.OffTopic
+		rej += r.RefutesRejected
 	}
 	per := map[string]map[string]float64{}
 	macro := 0.0
@@ -179,7 +179,7 @@ func run(log *slog.Logger, in, out string, perLabel, conc, maxChars int, seed ui
 	}
 	sum := map[string]any{"model": model, "n": len(rows), "accuracy": round(ratio(correct, len(rows))),
 		"macro_f1": round(macro), "per_label": per, "confusion": conf, "errors": errs,
-		"quotes_dropped": dropped, "off_topic": off, "wall_s": int(time.Since(start).Seconds())}
+		"quotes_dropped": dropped, "off_topic": off, "refutes_rejected": rej, "wall_s": int(time.Since(start).Seconds())}
 	b, _ := json.MarshalIndent(sum, "", " ")
 	if err := os.WriteFile(filepath.Join(out, "m2_stance_summary.json"), b, 0o644); err != nil {
 		return fmt.Errorf("write summary: %w", err)

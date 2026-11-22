@@ -107,7 +107,14 @@ func validateStance(cl Claim, raw rawStance, ps []passage) (out []judged, droppe
 	return out, dropped, offTopic
 }
 
-func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string) ([]judged, string, int, int, error) {
+// JudgeStats counts judgements the gates removed.
+type JudgeStats struct {
+	Dropped         int `json:"quotes_dropped"`   // quote not found in the passage
+	OffTopic        int `json:"off_topic"`        // quote shares no anchor with the claim
+	RefutesRejected int `json:"refutes_rejected"` // contradiction not confirmed by the refute check
+}
+
+func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string) ([]judged, string, JudgeStats, error) {
 	req := llm.Request{System: stancePrompt, User: stanceMessage(cl, ps, lang), MaxTokens: 600 + 250*len(ps)}
 	var lastErr error
 	for attempt := 0; attempt < 2; attempt++ {
@@ -115,7 +122,7 @@ func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string
 		if err != nil {
 			lastErr = err
 			if ctx.Err() != nil {
-				return nil, "", 0, 0, ctx.Err()
+				return nil, "", JudgeStats{}, ctx.Err()
 			}
 			continue
 		}
@@ -124,14 +131,64 @@ func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string
 			lastErr = fmt.Errorf("decode model json: %w", err)
 			continue
 		}
+		var st JudgeStats
 		js, dropped, off := validateStance(cl, raw, ps)
-		expl := strings.TrimSpace(raw.Explanation)
-		if len(js) == 0 {
-			expl = "" // no verdict, no narrative
+		st.Dropped, st.OffTopic = dropped, off
+		js, st.RefutesRejected, err = c.confirmRefutes(ctx, cl, js)
+		if err != nil {
+			return nil, "", JudgeStats{}, err
 		}
-		return js, expl, dropped, off, nil
+		expl := strings.TrimSpace(raw.Explanation)
+		if len(js) == 0 || st.RefutesRejected > 0 {
+			// No verdict, no narrative; a rejected refutation would make the
+			// model's explanation contradict the evidence that is kept.
+			expl = ""
+		}
+		return js, expl, st, nil
 	}
-	return nil, "", 0, 0, lastErr
+	return nil, "", JudgeStats{}, lastErr
+}
+
+// confirmRefutes asks a focused second question for every "refutes"
+// judgement: same quantity, period, unit and scope? The stance prompt alone
+// lets the model treat e.g. a yearly total as refuting a monthly figure.
+// Unconfirmed refutations are dropped (fail closed: a refutation is the
+// stronger statement). An LLM error keeps the judgement out as well.
+func (c *Checker) confirmRefutes(ctx context.Context, cl Claim, js []judged) ([]judged, int, error) {
+	out := js[:0:0]
+	rejected := 0
+	for _, j := range js {
+		if j.stance != StanceRefutes {
+			out = append(out, j)
+			continue
+		}
+		ok, err := c.contradicts(ctx, cl, j)
+		if err != nil && ctx.Err() != nil {
+			return nil, 0, ctx.Err()
+		}
+		if !ok {
+			rejected++
+			continue
+		}
+		out = append(out, j)
+	}
+	return out, rejected, nil
+}
+
+func (c *Checker) contradicts(ctx context.Context, cl Claim, j judged) (bool, error) {
+	user := fmt.Sprintf("<claim>%s</claim>\n\n<passage>\n%s\n</passage>\n\n<quote>%s</quote>\n",
+		sanitize(cl.Claim), sanitize(j.p.text), sanitize(j.quote))
+	out, _, err := c.LLM.ChatJSON(ctx, llm.Request{System: refutePrompt, User: user, MaxTokens: 300})
+	if err != nil {
+		return false, err
+	}
+	var r struct {
+		Contradicts bool `json:"contradicts"`
+	}
+	if err := json.Unmarshal([]byte(llm.ExtractJSON(out)), &r); err != nil {
+		return false, fmt.Errorf("decode refute json: %w", err)
+	}
+	return r.Contradicts, nil
 }
 
 // StanceResult is one judged passage, for offline evaluation.
@@ -143,8 +200,8 @@ type StanceResult struct {
 }
 
 // JudgeTexts runs the production stance step (prompt, quote gate, anchor
-// check) on plain passages. Used by cmd/stance-eval.
-func (c *Checker) JudgeTexts(ctx context.Context, claim, lang string, passages []string) ([]StanceResult, int, int, error) {
+// check, refute check) on plain passages. Used by cmd/stance-eval.
+func (c *Checker) JudgeTexts(ctx context.Context, claim, lang string, passages []string) ([]StanceResult, JudgeStats, error) {
 	pg := &page{host: "eval"}
 	ps := make([]passage, len(passages))
 	idx := map[string]int{}
@@ -152,13 +209,13 @@ func (c *Checker) JudgeTexts(ctx context.Context, claim, lang string, passages [
 		ps[i] = passage{page: pg, text: t}
 		idx[t] = i + 1
 	}
-	js, _, dropped, off, err := c.judge(ctx, Claim{Claim: claim}, ps, lang)
+	js, _, st, err := c.judge(ctx, Claim{Claim: claim}, ps, lang)
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, JudgeStats{}, err
 	}
 	out := make([]StanceResult, len(js))
 	for i, j := range js {
 		out[i] = StanceResult{Passage: idx[j.p.text], Stance: j.stance, Quote: j.quote, Confidence: j.confidence}
 	}
-	return out, dropped, off, nil
+	return out, st, nil
 }

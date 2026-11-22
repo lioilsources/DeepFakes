@@ -62,7 +62,7 @@ type run struct {
 	mu    sync.Mutex
 	pages map[string]*pageSlot
 
-	searches, searchErrs, fetched, evDropped, offTopic atomic.Int64
+	searches, searchErrs, fetched, evDropped, offTopic, refRejected atomic.Int64
 }
 
 type pageSlot struct {
@@ -139,6 +139,7 @@ func (c *Checker) Run(ctx context.Context, in Input, onClaim func(Claim), onVerd
 	sum.Searches, sum.SearchErrors = int(r.searches.Load()), int(r.searchErrs.Load())
 	sum.PagesFetched, sum.EvidenceQuotesDropped = int(r.fetched.Load()), int(r.evDropped.Load())
 	sum.EvidenceOffTopic = int(r.offTopic.Load())
+	sum.RefutesRejected = int(r.refRejected.Load())
 	sum.LatencyMS = c.Now().Sub(start).Milliseconds()
 	if p := checkErr.Load(); p != nil && sum.Checked > 0 && sum.ByLabel[LabelUnverifiable] == sum.Checked {
 		// Every check failed on infrastructure: report it, the claims stand.
@@ -349,12 +350,13 @@ func (r *run) check(ctx context.Context, cl Claim) (Verdict, error) {
 		return Verdict{ClaimID: cl.ID, Label: LabelUnverifiable, Reason: "no_relevant_evidence",
 			SourcesConsidered: considered, Evidence: []Evidence{}}, nil
 	}
-	js, expl, dropped, off, err := r.c.judge(ctx, cl, best, r.in.Language)
+	js, expl, st, err := r.c.judge(ctx, cl, best, r.in.Language)
 	if err != nil {
 		return Verdict{}, err
 	}
-	r.evDropped.Add(int64(dropped))
-	r.offTopic.Add(int64(off))
+	r.evDropped.Add(int64(st.Dropped))
+	r.offTopic.Add(int64(st.OffTopic))
+	r.refRejected.Add(int64(st.RefutesRejected))
 	v := r.c.Config.aggregate(cl, js, considered)
 	if v.Label != LabelUnverifiable {
 		v.Explanation = expl

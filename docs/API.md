@@ -117,7 +117,7 @@ Chyby (`4xx/5xx`) mají tvar `{"error": {"code": "…", "message": "…"}}`. Kó
 
 ```json
 {"claims_found": 9, "checked": 6, "by_label": {"supported": 3, "unverifiable": 2, "not_checked": 3, "refuted": 1},
- "quotes_dropped": 1, "evidence_quotes_dropped": 0, "evidence_off_topic": 2, "searches": 18, "search_errors": 0, "pages_fetched": 22,
+ "quotes_dropped": 1, "evidence_quotes_dropped": 0, "evidence_off_topic": 2, "refutes_rejected": 0, "searches": 18, "search_errors": 0, "pages_fetched": 22,
  "providers": ["factcheck", "brave", "wikipedia"], "model": "deepfake-llm", "method": "claims-v1", "latency_ms": 64000}
 ```
 
