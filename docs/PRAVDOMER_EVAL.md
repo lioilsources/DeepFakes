@@ -167,6 +167,15 @@ Zjištění:
 - **Rottrová:** „sporné“, odpovídá zdrojům.
 - **Souhrn řady 20.–22. 11.:** vyvrácení z 2 chybných na 0, CsFEVER refutes precision 0,76 → 0,86 při recallu 0,67 → 0,60.
 
+**Pozdější události nevyvracejí stav k datu tvrzení** (22. 11., commit 6850170, okno `deepfake-m2-eval-qwen36-later`):
+- **Verdikty (smoke):** 2 podl., 10 převážně, 2 sporné, 2 vyvrácené, 35 nelze ověřit. Předtím (dates2) 3/12/2/0/36.
+- **CsFEVER:** accuracy 0,677, macro F1 0,681, refutes P 0,85 / R 0,58. Neplatné citace v UI 0.
+- **Latence:** do 1. verdiktu p50 26 s / p95 35 s, do souhrnu tvrzení p50 41 s / p95 59 s.
+- **Mississippi:** tentokrát `not_checked`. Extrakce tvrzení nevybrala k ověření, takže opravu tenhle běh neověřil.
+- **Finidr, měsíční náklad:** zase „vyvráceno“ (starší roční čísla). V dates a dates2 vyšlo „nelze ověřit“.
+- **Petrohrad, „příčina je nejasná“:** „vyvráceno“ zdroji, které popisují nálož pod autem. To je přesně případ, kdy pozdější zjištění nemá vyvracet stav k datu článku.
+- **Závěr:** rozdíly mezi posledními čtyřmi běhy jsou v šumu. Extrakce vybírá jiná tvrzení a stejné tvrzení skáče mezi „vyvráceno“ a „nelze ověřit“. Ladění promptů na 9 článcích tu končí. Další rozhodování patří na ruční anotaci Tier 1 a na opakované běhy (víc seedů) se srovnáním rozptylu.
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |
