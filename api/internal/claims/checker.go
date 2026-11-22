@@ -37,7 +37,16 @@ type Input struct {
 	Title      string
 	Paragraphs []string
 	Language   string
-	URL        string // excluded from evidence together with its site
+	URL        string     // excluded from evidence together with its site
+	Published  *time.Time // article date; claims are judged as of this date
+}
+
+// asOf is the date claims are judged at: the article date, else the run start.
+func (r *run) asOf() *time.Time {
+	if r.in.Published != nil {
+		return r.in.Published
+	}
+	return &r.start
 }
 
 // page is a downloaded evidence page, shared by all claims of one run.
@@ -56,6 +65,7 @@ type page struct {
 type run struct {
 	c       *Checker
 	in      Input
+	start   time.Time
 	ownSite string
 	fetchSe chan struct{}
 
@@ -88,7 +98,7 @@ func (c *Checker) Run(ctx context.Context, in Input, onClaim func(Claim), onVerd
 		onClaim(cl)
 	}
 	check, skip := c.selectForCheck(cls)
-	r := &run{c: c, in: in, ownSite: siteOf(hostOf(in.URL)), pages: map[string]*pageSlot{},
+	r := &run{c: c, in: in, start: start, ownSite: siteOf(hostOf(in.URL)), pages: map[string]*pageSlot{},
 		fetchSe: make(chan struct{}, max(1, c.Config.Limits.FetchConcurrency))}
 	emit := func(v Verdict) {
 		cbMu.Lock()
@@ -350,7 +360,7 @@ func (r *run) check(ctx context.Context, cl Claim) (Verdict, error) {
 		return Verdict{ClaimID: cl.ID, Label: LabelUnverifiable, Reason: "no_relevant_evidence",
 			SourcesConsidered: considered, Evidence: []Evidence{}}, nil
 	}
-	js, expl, st, err := r.c.judge(ctx, cl, best, r.in.Language)
+	js, expl, st, err := r.c.judge(ctx, cl, best, r.in.Language, r.asOf())
 	if err != nil {
 		return Verdict{}, err
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/lioilsources/DeepFakes/api/internal/llm"
 	"github.com/lioilsources/DeepFakes/api/internal/quote"
@@ -23,14 +24,23 @@ type rawStance struct {
 	Explanation string         `json:"explanation"`
 }
 
-func stanceMessage(cl Claim, ps []passage, lang string) string {
+// dateOf formats a date for the prompts; unknown dates are said so.
+func dateOf(t *time.Time) string {
+	if t == nil || t.IsZero() {
+		return "unknown"
+	}
+	return t.UTC().Format("2006-01-02")
+}
+
+func stanceMessage(cl Claim, ps []passage, lang string, claimDate *time.Time) string {
 	var sb strings.Builder
 	if lang == "" {
 		lang = "en"
 	}
-	fmt.Fprintf(&sb, "LANG: %s\n\n<claim>%s</claim>\n\n", lang, sanitize(cl.Claim))
+	fmt.Fprintf(&sb, "LANG: %s\nCLAIM_DATE: %s\n\n<claim>%s</claim>\n\n", lang, dateOf(claimDate), sanitize(cl.Claim))
 	for i, p := range ps {
-		fmt.Fprintf(&sb, "<passage id=\"%d\" source=\"%s\">\n%s\n</passage>\n\n", i+1, sanitize(p.page.host), sanitize(p.text))
+		fmt.Fprintf(&sb, "<passage id=\"%d\" source=\"%s\" date=\"%s\">\n%s\n</passage>\n\n",
+			i+1, sanitize(p.page.host), dateOf(p.page.published), sanitize(p.text))
 	}
 	return sb.String()
 }
@@ -114,8 +124,8 @@ type JudgeStats struct {
 	RefutesRejected int `json:"refutes_rejected"` // contradiction not confirmed by the refute check
 }
 
-func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string) ([]judged, string, JudgeStats, error) {
-	req := llm.Request{System: stancePrompt, User: stanceMessage(cl, ps, lang), MaxTokens: 600 + 250*len(ps)}
+func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string, claimDate *time.Time) ([]judged, string, JudgeStats, error) {
+	req := llm.Request{System: stancePrompt, User: stanceMessage(cl, ps, lang, claimDate), MaxTokens: 600 + 250*len(ps)}
 	var lastErr error
 	for attempt := 0; attempt < 2; attempt++ {
 		out, _, err := c.LLM.ChatJSON(ctx, req)
@@ -134,7 +144,7 @@ func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string
 		var st JudgeStats
 		js, dropped, off := validateStance(cl, raw, ps)
 		st.Dropped, st.OffTopic = dropped, off
-		js, st.RefutesRejected, err = c.confirmRefutes(ctx, cl, js)
+		js, st.RefutesRejected, err = c.confirmRefutes(ctx, cl, js, claimDate)
 		if err != nil {
 			return nil, "", JudgeStats{}, err
 		}
@@ -154,7 +164,7 @@ func (c *Checker) judge(ctx context.Context, cl Claim, ps []passage, lang string
 // lets the model treat e.g. a yearly total as refuting a monthly figure.
 // Unconfirmed refutations are dropped (fail closed: a refutation is the
 // stronger statement). An LLM error keeps the judgement out as well.
-func (c *Checker) confirmRefutes(ctx context.Context, cl Claim, js []judged) ([]judged, int, error) {
+func (c *Checker) confirmRefutes(ctx context.Context, cl Claim, js []judged, claimDate *time.Time) ([]judged, int, error) {
 	out := js[:0:0]
 	rejected := 0
 	for _, j := range js {
@@ -162,7 +172,7 @@ func (c *Checker) confirmRefutes(ctx context.Context, cl Claim, js []judged) ([]
 			out = append(out, j)
 			continue
 		}
-		ok, err := c.contradicts(ctx, cl, j)
+		ok, err := c.contradicts(ctx, cl, j, claimDate)
 		if err != nil && ctx.Err() != nil {
 			return nil, 0, ctx.Err()
 		}
@@ -175,9 +185,9 @@ func (c *Checker) confirmRefutes(ctx context.Context, cl Claim, js []judged) ([]
 	return out, rejected, nil
 }
 
-func (c *Checker) contradicts(ctx context.Context, cl Claim, j judged) (bool, error) {
-	user := fmt.Sprintf("<claim>%s</claim>\n\n<passage>\n%s\n</passage>\n\n<quote>%s</quote>\n",
-		sanitize(cl.Claim), sanitize(j.p.text), sanitize(j.quote))
+func (c *Checker) contradicts(ctx context.Context, cl Claim, j judged, claimDate *time.Time) (bool, error) {
+	user := fmt.Sprintf("CLAIM_DATE: %s\nPASSAGE_DATE: %s\n\n<claim>%s</claim>\n\n<passage>\n%s\n</passage>\n\n<quote>%s</quote>\n",
+		dateOf(claimDate), dateOf(j.p.page.published), sanitize(cl.Claim), sanitize(j.p.text), sanitize(j.quote))
 	out, _, err := c.LLM.ChatJSON(ctx, llm.Request{System: refutePrompt, User: user, MaxTokens: 300})
 	if err != nil {
 		return false, err
@@ -209,7 +219,7 @@ func (c *Checker) JudgeTexts(ctx context.Context, claim, lang string, passages [
 		ps[i] = passage{page: pg, text: t}
 		idx[t] = i + 1
 	}
-	js, _, st, err := c.judge(ctx, Claim{Claim: claim}, ps, lang)
+	js, _, st, err := c.judge(ctx, Claim{Claim: claim}, ps, lang, nil)
 	if err != nil {
 		return nil, JudgeStats{}, err
 	}

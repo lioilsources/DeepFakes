@@ -386,3 +386,15 @@ func TestAnchoredRejectsOffTopicQuotes(t *testing.T) {
 		t.Error("cross-lingual quote with the same name rejected")
 	}
 }
+
+func TestStanceMessageCarriesDates(t *testing.T) {
+	art := time.Date(2026, 11, 10, 7, 30, 0, 0, time.UTC)
+	src := time.Date(2021, 3, 2, 0, 0, 0, 0, time.UTC)
+	ps := []passage{{page: &page{host: "a.cz", published: &src}, text: "x"}, {page: &page{host: "b.cz"}, text: "y"}}
+	m := stanceMessage(Claim{Claim: "c"}, ps, "cs", &art)
+	for _, want := range []string{"CLAIM_DATE: 2026-11-10", `source="a.cz" date="2021-03-02"`, `source="b.cz" date="unknown"`} {
+		if !strings.Contains(m, want) {
+			t.Errorf("missing %q in %q", want, m)
+		}
+	}
+}

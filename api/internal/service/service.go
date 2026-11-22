@@ -314,7 +314,7 @@ func (s *Service) run(ctx context.Context, j job) error {
 // runClaims checks claims; failures end up in the claims summary, they do
 // not fail the analysis. A store error is reported through fail.
 func (s *Service) runClaims(ctx context.Context, id string, doc extract.Document, fail func(error)) *claims.Summary {
-	in := claims.Input{Title: doc.Title, Paragraphs: doc.Paragraphs, Language: doc.Language, URL: doc.URL}
+	in := claims.Input{Title: doc.Title, Paragraphs: doc.Paragraphs, Language: doc.Language, URL: doc.URL, Published: doc.PublishedAt}
 	sum, err := s.Claims.Run(ctx, in, func(c claims.Claim) {
 		if err := s.Store.SaveClaim(ctx, id, c); err != nil {
 			fail(err)
