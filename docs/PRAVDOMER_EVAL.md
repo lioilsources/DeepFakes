@@ -150,6 +150,15 @@ Zjištění:
 - **Finidr, 500miliontá kniha.** „Sporné“: Wikipedie uvádí červen 2026, web tiskárny 19. 6. 2025. Zdroje se opravdu rozcházejí.
 - **Latence.** Do souhrnu tvrzení p50 44 s, předtím 39 s. Navíc je jedno volání na každé „refutes“.
 
+**S datem článku a zdroje** (22. 11., okno `deepfake-m2-eval-qwen36-dates`):
+- **Verdikty (smoke):** 3 podl., 12 převážně, 2 sporné, 0 vyvrácených, 36 nelze ověřit. Extrakce našla 77 tvrzení místo 64, extrakce mezi běhy kolísá.
+- **CsFEVER:** accuracy 0,697, macro F1 0,702, refutes P 0,85 / R 0,64. Nejlepší z dosavadních běhů. CsFEVER data nemá, zlepšení jde nejspíš na vrub pravidlu „nepřevádět jednotky“ v kontrole vyvrácení.
+- **Finidr, měsíční náklad:** teď „nelze ověřit“ (`weak_evidence`), správně.
+- **Finidr, 500miliontá kniha:** „podloženo“. Jestli je to správně, záleží na zdroji: web tiskárny uvádí 2025, Wikipedie 2026.
+- **Nová chyba:** „sporné“ u tvrzení, že Mississippi neposlalo černého senátora od Rekonstrukce. Citace ho ve skutečnosti podporuje. Stránka Wikipedie měla datum 2022 (den založení článku), přestože popisuje volby 2026.
+- **Oprava:** encyklopedie datum nedostanou.
+- **Latence:** do souhrnu tvrzení p50 49 s / p95 68 s. Bylo víc tvrzení a sdílená GPU, podmínky nejsou stejné.
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |

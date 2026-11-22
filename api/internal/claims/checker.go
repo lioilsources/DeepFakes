@@ -307,7 +307,10 @@ func (r *run) fetch(ctx context.Context, h search.Hit) *page {
 		if doc.Title != "" {
 			p.title = doc.Title
 		}
-		if p.published == nil {
+		// An encyclopedia page date is when the article was created, not when
+		// its facts were written: a 2020 date on a page about a 2026 election
+		// misled the stance step. Such pages get no date.
+		if p.published == nil && p.sourceType != "encyclopedia" {
 			p.published = doc.PublishedAt
 		}
 		p.passages = splitPassages(doc.Paragraphs, r.c.Config.Limits.PassageChars)
