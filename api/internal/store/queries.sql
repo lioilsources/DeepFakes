@@ -57,3 +57,31 @@ SET techniques = (
     SELECT coalesce(jsonb_agg(jsonb_build_object('technique', t ->> 'technique', 'confidence', t -> 'confidence')), '[]'::jsonb)
     FROM jsonb_array_elements(techniques) AS t)
 WHERE analysis_id = ANY(@ids::text[]);
+
+-- name: SaveClaim :exec
+INSERT INTO claims (analysis_id, claim_id, p, kind, checkworthy, data)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (analysis_id, claim_id) DO UPDATE
+SET p = EXCLUDED.p, kind = EXCLUDED.kind, checkworthy = EXCLUDED.checkworthy, data = EXCLUDED.data;
+
+-- name: SaveVerdict :exec
+UPDATE claims SET label = $3, verdict = $4 WHERE analysis_id = $1 AND claim_id = $2;
+
+-- name: SaveClaimsSummary :exec
+INSERT INTO claims_summaries (analysis_id, method, summary) VALUES ($1, $2, $3)
+ON CONFLICT (analysis_id) DO UPDATE SET method = EXCLUDED.method, summary = EXCLUDED.summary;
+
+-- name: ListClaims :many
+SELECT * FROM claims WHERE analysis_id = $1 ORDER BY p, (data ->> 'start')::int, claim_id;
+
+-- name: GetClaimsSummary :one
+SELECT * FROM claims_summaries WHERE analysis_id = $1;
+
+-- name: StripClaims :exec
+UPDATE claims
+SET data = jsonb_build_object('id', data -> 'id', 'p', data -> 'p', 'start', data -> 'start', 'end', data -> 'end', 'kind', data -> 'kind', 'checkworthy', data -> 'checkworthy'),
+    verdict = CASE WHEN verdict IS NULL THEN NULL ELSE
+        (verdict - 'explanation') || jsonb_build_object('evidence', (
+            SELECT coalesce(jsonb_agg(e - 'quote'), '[]'::jsonb) FROM jsonb_array_elements(verdict -> 'evidence') AS e))
+    END
+WHERE analysis_id = ANY(@ids::text[]);

@@ -311,4 +311,187 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emotionNeutral => 'Neutral';
+
+  @override
+  String get claimsTitle => 'Claims';
+
+  @override
+  String get claimsIntro =>
+      'We check individual claims against sources we find, not the author or the outlet. Claim checks and text temperature are two independent things.';
+
+  @override
+  String get claimsSearching => 'Looking for claims…';
+
+  @override
+  String get claimsNone => 'No claims to check were found in the text.';
+
+  @override
+  String get claimsFailed =>
+      'Claim checking could not be completed. The text temperature is not affected.';
+
+  @override
+  String claimsSummaryLead(int count, int total) {
+    return '$count of $total claims supported';
+  }
+
+  @override
+  String claimsCountMostlySupported(int count) {
+    return '$count mostly supported';
+  }
+
+  @override
+  String claimsCountDisputed(int count) {
+    return '$count disputed';
+  }
+
+  @override
+  String claimsCountRefuted(int count) {
+    return '$count refuted';
+  }
+
+  @override
+  String claimsCountUnverifiable(int count) {
+    return '$count cannot be verified';
+  }
+
+  @override
+  String claimsCountNotChecked(int count) {
+    return '$count not checked';
+  }
+
+  @override
+  String claimsNotCheckedTitle(int count) {
+    return 'Not checked ($count)';
+  }
+
+  @override
+  String get claimPurged => 'The claim text has been deleted.';
+
+  @override
+  String get claimShowInText => 'Show in text';
+
+  @override
+  String claimParagraph(int p) {
+    return '§ $p';
+  }
+
+  @override
+  String get verdictChecking => 'Checking…';
+
+  @override
+  String get verdictMissing => 'No result';
+
+  @override
+  String get verdictSupported => 'Supported';
+
+  @override
+  String get verdictMostlySupported => 'Mostly supported';
+
+  @override
+  String get verdictDisputed => 'Disputed';
+
+  @override
+  String get verdictRefuted => 'Refuted';
+
+  @override
+  String get verdictUnverifiable => 'Cannot verify';
+
+  @override
+  String get verdictNotChecked => 'Not checked';
+
+  @override
+  String get verdictUnverifiableInfo =>
+      'The sources found are not enough for a conclusion. This does not mean the claim is false.';
+
+  @override
+  String verdictConfidence(int percent) {
+    return 'Estimated confidence: $percent %';
+  }
+
+  @override
+  String get verdictConfidenceNote =>
+      'An estimate, not yet a calibrated probability.';
+
+  @override
+  String verdictSources(int independent, int considered) {
+    return 'Independent sources: $independent of $considered';
+  }
+
+  @override
+  String get modelSummaryLabel => 'Model summary';
+
+  @override
+  String evidenceTitle(int count) {
+    return 'Evidence ($count)';
+  }
+
+  @override
+  String evidencePublished(String date) {
+    return 'published $date';
+  }
+
+  @override
+  String factcheckRating(String publisher, String rating) {
+    return 'Rating by $publisher: $rating';
+  }
+
+  @override
+  String get linkOpenFailed => 'The link could not be opened.';
+
+  @override
+  String get stanceSupports => 'supports';
+
+  @override
+  String get stanceRefutes => 'refutes';
+
+  @override
+  String get reasonOpinion => 'An opinion; we do not check those.';
+
+  @override
+  String get reasonPrediction => 'A prediction; it cannot be checked yet.';
+
+  @override
+  String get reasonLowPriority =>
+      'A less important claim; we did not check it.';
+
+  @override
+  String get reasonLimit => 'Over the limit of checked claims per article.';
+
+  @override
+  String get reasonNoSources => 'We found no sources for this claim.';
+
+  @override
+  String get reasonNoRelevantEvidence =>
+      'The sources found do not address the claim directly.';
+
+  @override
+  String get reasonWeakEvidence =>
+      'The evidence found is too weak for a conclusion.';
+
+  @override
+  String get reasonCheckFailed => 'Checking this claim could not be completed.';
+
+  @override
+  String get sourceFactChecker => 'Fact-checker';
+
+  @override
+  String get sourcePrimary => 'Primary source';
+
+  @override
+  String get sourceEncyclopedia => 'Encyclopedia';
+
+  @override
+  String get sourceNews => 'News';
+
+  @override
+  String get sourceUnknown => 'Unknown source';
+
+  @override
+  String get kindFact => 'Fact';
+
+  @override
+  String get kindOpinion => 'Opinion';
+
+  @override
+  String get kindPrediction => 'Prediction';
 }

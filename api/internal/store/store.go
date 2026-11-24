@@ -7,6 +7,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/lioilsources/DeepFakes/api/internal/claims"
 	"github.com/lioilsources/DeepFakes/api/internal/temperature"
 )
 
@@ -58,12 +59,20 @@ type Error struct {
 
 // Result is the full state of an analysis.
 type Result struct {
-	ID         string                  `json:"id"`
-	Status     string                  `json:"status"`
-	Document   *Document               `json:"document,omitempty"`
-	Paragraphs []temperature.Paragraph `json:"paragraphs"`
-	Summary    *temperature.Summary    `json:"summary,omitempty"`
-	Error      *Error                  `json:"error,omitempty"`
+	ID            string                  `json:"id"`
+	Status        string                  `json:"status"`
+	Document      *Document               `json:"document,omitempty"`
+	Paragraphs    []temperature.Paragraph `json:"paragraphs"`
+	Summary       *temperature.Summary    `json:"summary,omitempty"`
+	Claims        []ClaimResult           `json:"claims"`
+	ClaimsSummary *claims.Summary         `json:"claims_summary,omitempty"`
+	Error         *Error                  `json:"error,omitempty"`
+}
+
+// ClaimResult is a claim with its verdict (nil while checking).
+type ClaimResult struct {
+	claims.Claim
+	Verdict *claims.Verdict `json:"verdict,omitempty"`
 }
 
 // Store is the persistence API used by the service.
@@ -77,8 +86,12 @@ type Store interface {
 	SaveDocument(ctx context.Context, id string, d Document) error
 	SaveParagraph(ctx context.Context, id string, p temperature.Paragraph) error
 	SaveSummary(ctx context.Context, id string, s temperature.Summary) error
+	SaveClaim(ctx context.Context, id string, c claims.Claim) error
+	SaveVerdict(ctx context.Context, id string, v claims.Verdict) error
+	SaveClaimsSummary(ctx context.Context, id string, s claims.Summary) error
 	Get(ctx context.Context, id string) (Result, error)
-	// Purge drops texts and quotes of analyses created before cutoff.
+	// Purge drops texts and quotes (paragraphs, techniques, claims,
+	// evidence) of analyses created before cutoff; metrics and links stay.
 	Purge(ctx context.Context, cutoff, at time.Time) (int, error)
 }
 
@@ -87,6 +100,22 @@ func stripQuotes(ts []temperature.Technique) []temperature.Technique {
 	out := make([]temperature.Technique, len(ts))
 	for i, t := range ts {
 		out[i] = temperature.Technique{Technique: t.Technique, Confidence: t.Confidence}
+	}
+	return out
+}
+
+// stripClaim keeps only metadata of a claim and its verdict.
+func stripClaim(c ClaimResult) ClaimResult {
+	out := ClaimResult{Claim: claims.Claim{ID: c.ID, P: c.P, Start: c.Start, End: c.End, Kind: c.Kind, Checkworthy: c.Checkworthy}}
+	if c.Verdict != nil {
+		v := *c.Verdict
+		v.Explanation = ""
+		v.Evidence = make([]claims.Evidence, len(c.Verdict.Evidence))
+		for i, e := range c.Verdict.Evidence {
+			e.Quote = ""
+			v.Evidence[i] = e
+		}
+		out.Verdict = &v
 	}
 	return out
 }

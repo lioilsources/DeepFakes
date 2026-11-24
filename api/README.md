@@ -1,6 +1,6 @@
 # Pravdoměr API
 
-Go služba pro M1: URL nebo vložený text → extrakce článku → teplota per odstavec přes LLM na SPARKu → průběžné výsledky přes SSE. Smlouva API je v [`../docs/API.md`](../docs/API.md).
+Go služba: URL nebo vložený text → extrakce článku → teplota per odstavec (M1) a souběžně ověření tvrzení s citovanými zdroji (M2), obojí přes LLM na SPARKu → průběžné výsledky přes SSE. Postup ověřování: [`../docs/M2_CLAIMS.md`](../docs/M2_CLAIMS.md). Smlouva API je v [`../docs/API.md`](../docs/API.md).
 
 ## Struktura
 
@@ -9,13 +9,15 @@ Go služba pro M1: URL nebo vložený text → extrakce článku → teplota per
 | `cmd/pravdomer-api` | konfigurace z env, start serveru |
 | `internal/extract` | stažení stránky (bez přístupu do LAN, limit velikosti, UA DeepFakeBot), readability, dělení na odstavce, detekce jazyka |
 | `internal/temperature` | bloky odstavců → paralelní LLM dotazy → validace citací → skóre podle `config/temperature.json` |
+| `internal/claims` | extrakce tvrzení → hledání → stažení zdrojů → výběr pasáží → stance přes LLM → validace citací → verdikt podle `config/claims.json` |
+| `internal/search` | Brave, Wikipedie, Google Fact Check; vrací jen URL, výsledky hledání se neukládají; denní limit dotazů |
 | `internal/quote` | tvrdý gate: citace se drží, jen když je doslova v textu; offsety v UTF-16 pro appku |
 | `internal/llm` | OpenAI-kompatibilní klient na LiteLLM gateway |
 | `internal/service` | fronta jobů, cache podle URL/textu, SSE hub s replay, mazání textů po `CACHE_TTL` |
 | `internal/httpapi` | HTTP + SSE, rate limit per zařízení |
 | `internal/store` | Postgres (sqlc, migrace golang-migrate) a in-memory varianta pro testy a lokální běh |
 
-`internal/temperature/prompt.md` je kopie `llm_prompts/temperature.md`; test hlídá, že jsou stejné.
+`internal/temperature/prompt.md` je kopie `llm_prompts/temperature.md`, `internal/claims/{claims,stance}.md` kopie `llm_prompts/`; testy hlídají, že jsou stejné.
 
 ## Lokální běh
 
@@ -38,7 +40,12 @@ Bez `DATABASE_URL` běží s pamětí (data se ztratí restartem). LLM na SPARKu
 | `CACHE_TTL` | `168h` | potom se smaže text a citace, zůstanou metriky |
 | `SUBMIT_EVERY`, `SUBMIT_BURST` | `20s`, 5 | rate limit per `X-Device-Id` |
 | `TEMPERATURE_WEIGHTS` | vestavěný | cesta k vlastnímu JSON s váhami |
-| `BOT_USER_AGENT` | DeepFakeBot | |
+| `BOT_USER_AGENT` | DeepFakeBot | i pro Wikipedii a stahování zdrojů |
+| `CLAIMS` | `on` | `off` vypne ověřování tvrzení |
+| `CLAIMS_CONFIG` | vestavěný | cesta k vlastnímu `claims.json` (limity, váhy zdrojů, prahy verdiktu) |
+| `BRAVE_API_KEY`, `BRAVE_DAILY_LIMIT` | –, 30 | Brave Search; prázdný klíč = vypnuto. 30/den ≈ měsíční kredit zdarma |
+| `GOOGLE_FACTCHECK_API_KEY` | – | Google Fact Check Tools; prázdný = vypnuto |
+| `WIKIPEDIA` | `on` | hledání ve Wikipedii (bez klíče) |
 
 ## Gate
 

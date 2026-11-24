@@ -106,3 +106,86 @@ const emotionKeys = <String>[
   'surprise',
   'neutral',
 ];
+
+String verdictLabel(AppLocalizations l, String key) {
+  switch (key) {
+    case 'supported':
+      return l.verdictSupported;
+    case 'mostly_supported':
+      return l.verdictMostlySupported;
+    case 'disputed':
+      return l.verdictDisputed;
+    case 'refuted':
+      return l.verdictRefuted;
+    case 'unverifiable':
+      return l.verdictUnverifiable;
+    case 'not_checked':
+      return l.verdictNotChecked;
+    default:
+      return key;
+  }
+}
+
+String verdictReason(AppLocalizations l, String key) {
+  switch (key) {
+    case 'opinion':
+      return l.reasonOpinion;
+    case 'prediction':
+      return l.reasonPrediction;
+    case 'low_priority':
+      return l.reasonLowPriority;
+    case 'limit':
+      return l.reasonLimit;
+    case 'no_sources':
+      return l.reasonNoSources;
+    case 'no_relevant_evidence':
+      return l.reasonNoRelevantEvidence;
+    case 'weak_evidence':
+      return l.reasonWeakEvidence;
+    case 'check_failed':
+      return l.reasonCheckFailed;
+    default:
+      return key;
+  }
+}
+
+String sourceTypeName(AppLocalizations l, String key) {
+  switch (key) {
+    case 'fact_checker':
+      return l.sourceFactChecker;
+    case 'primary':
+      return l.sourcePrimary;
+    case 'encyclopedia':
+      return l.sourceEncyclopedia;
+    case 'news':
+      return l.sourceNews;
+    case 'unknown':
+      return l.sourceUnknown;
+    default:
+      return key;
+  }
+}
+
+String claimKindName(AppLocalizations l, String key) {
+  switch (key) {
+    case 'fact':
+      return l.kindFact;
+    case 'opinion':
+      return l.kindOpinion;
+    case 'prediction':
+      return l.kindPrediction;
+    default:
+      return key;
+  }
+}
+
+String stanceName(AppLocalizations l, String key) {
+  switch (key) {
+    case 'supports':
+      return l.stanceSupports;
+    case 'refutes':
+      return l.stanceRefutes;
+    default:
+      return key;
+  }
+}

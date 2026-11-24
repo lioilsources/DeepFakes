@@ -169,5 +169,155 @@
   "emotionSadness": "Sadness",
   "emotionJoy": "Joy",
   "emotionSurprise": "Surprise",
-  "emotionNeutral": "Neutral"
+  "emotionNeutral": "Neutral",
+  "claimsTitle": "Claims",
+  "claimsIntro": "We check individual claims against sources we find, not the author or the outlet. Claim checks and text temperature are two independent things.",
+  "claimsSearching": "Looking for claims…",
+  "claimsNone": "No claims to check were found in the text.",
+  "claimsFailed": "Claim checking could not be completed. The text temperature is not affected.",
+  "claimsSummaryLead": "{count} of {total} claims supported",
+  "@claimsSummaryLead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "claimsCountMostlySupported": "{count} mostly supported",
+  "@claimsCountMostlySupported": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "claimsCountDisputed": "{count} disputed",
+  "@claimsCountDisputed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "claimsCountRefuted": "{count} refuted",
+  "@claimsCountRefuted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "claimsCountUnverifiable": "{count} cannot be verified",
+  "@claimsCountUnverifiable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "claimsCountNotChecked": "{count} not checked",
+  "@claimsCountNotChecked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "claimsNotCheckedTitle": "Not checked ({count})",
+  "@claimsNotCheckedTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "claimPurged": "The claim text has been deleted.",
+  "claimShowInText": "Show in text",
+  "claimParagraph": "§ {p}",
+  "@claimParagraph": {
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  },
+  "verdictChecking": "Checking…",
+  "verdictMissing": "No result",
+  "verdictSupported": "Supported",
+  "verdictMostlySupported": "Mostly supported",
+  "verdictDisputed": "Disputed",
+  "verdictRefuted": "Refuted",
+  "verdictUnverifiable": "Cannot verify",
+  "verdictNotChecked": "Not checked",
+  "verdictUnverifiableInfo": "The sources found are not enough for a conclusion. This does not mean the claim is false.",
+  "verdictConfidence": "Estimated confidence: {percent} %",
+  "@verdictConfidence": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "verdictConfidenceNote": "An estimate, not yet a calibrated probability.",
+  "verdictSources": "Independent sources: {independent} of {considered}",
+  "@verdictSources": {
+    "placeholders": {
+      "independent": {
+        "type": "int"
+      },
+      "considered": {
+        "type": "int"
+      }
+    }
+  },
+  "modelSummaryLabel": "Model summary",
+  "evidenceTitle": "Evidence ({count})",
+  "@evidenceTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "evidencePublished": "published {date}",
+  "@evidencePublished": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "factcheckRating": "Rating by {publisher}: {rating}",
+  "@factcheckRating": {
+    "placeholders": {
+      "publisher": {
+        "type": "String"
+      },
+      "rating": {
+        "type": "String"
+      }
+    }
+  },
+  "linkOpenFailed": "The link could not be opened.",
+  "stanceSupports": "supports",
+  "stanceRefutes": "refutes",
+  "reasonOpinion": "An opinion; we do not check those.",
+  "reasonPrediction": "A prediction; it cannot be checked yet.",
+  "reasonLowPriority": "A less important claim; we did not check it.",
+  "reasonLimit": "Over the limit of checked claims per article.",
+  "reasonNoSources": "We found no sources for this claim.",
+  "reasonNoRelevantEvidence": "The sources found do not address the claim directly.",
+  "reasonWeakEvidence": "The evidence found is too weak for a conclusion.",
+  "reasonCheckFailed": "Checking this claim could not be completed.",
+  "sourceFactChecker": "Fact-checker",
+  "sourcePrimary": "Primary source",
+  "sourceEncyclopedia": "Encyclopedia",
+  "sourceNews": "News",
+  "sourceUnknown": "Unknown source",
+  "kindFact": "Fact",
+  "kindOpinion": "Opinion",
+  "kindPrediction": "Prediction"
 }

@@ -2,10 +2,12 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"sync"
 	"time"
 
+	"github.com/lioilsources/DeepFakes/api/internal/claims"
 	"github.com/lioilsources/DeepFakes/api/internal/temperature"
 )
 
@@ -16,6 +18,8 @@ type memEntry struct {
 	doc     *Document
 	paras   map[int]temperature.Paragraph
 	summary *temperature.Summary
+	claims  []ClaimResult
+	csum    *claims.Summary
 }
 
 // Memory is an in-process Store. Data is lost on restart.
@@ -106,6 +110,50 @@ func (s *Memory) SaveSummary(_ context.Context, id string, sum temperature.Summa
 	return nil
 }
 
+func (s *Memory) SaveClaim(_ context.Context, id string, c claims.Claim) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	e, err := s.get(id)
+	if err != nil {
+		return err
+	}
+	for i := range e.claims {
+		if e.claims[i].ID == c.ID {
+			e.claims[i].Claim = c
+			return nil
+		}
+	}
+	e.claims = append(e.claims, ClaimResult{Claim: c})
+	return nil
+}
+
+func (s *Memory) SaveVerdict(_ context.Context, id string, v claims.Verdict) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	e, err := s.get(id)
+	if err != nil {
+		return err
+	}
+	for i := range e.claims {
+		if e.claims[i].ID == v.ClaimID {
+			e.claims[i].Verdict = &v
+			return nil
+		}
+	}
+	return fmt.Errorf("verdict for unknown claim %s", v.ClaimID)
+}
+
+func (s *Memory) SaveClaimsSummary(_ context.Context, id string, sum claims.Summary) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	e, err := s.get(id)
+	if err != nil {
+		return err
+	}
+	e.csum = &sum
+	return nil
+}
+
 func (s *Memory) Get(_ context.Context, id string) (Result, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -113,7 +161,14 @@ func (s *Memory) Get(_ context.Context, id string) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	r := Result{ID: id, Status: e.status, Error: e.err, Summary: e.summary, Paragraphs: []temperature.Paragraph{}}
+	r := Result{ID: id, Status: e.status, Error: e.err, Summary: e.summary, Paragraphs: []temperature.Paragraph{},
+		Claims: append([]ClaimResult{}, e.claims...), ClaimsSummary: e.csum}
+	sort.SliceStable(r.Claims, func(i, j int) bool {
+		if r.Claims[i].P != r.Claims[j].P {
+			return r.Claims[i].P < r.Claims[j].P
+		}
+		return r.Claims[i].Start < r.Claims[j].Start
+	})
 	if e.doc != nil {
 		d := *e.doc
 		r.Document = &d
@@ -137,6 +192,9 @@ func (s *Memory) Purge(_ context.Context, cutoff, _ time.Time) (int, error) {
 		for k, p := range e.paras {
 			p.Techniques = stripQuotes(p.Techniques)
 			e.paras[k] = p
+		}
+		for i, c := range e.claims {
+			e.claims[i] = stripClaim(c)
 		}
 		n++
 	}

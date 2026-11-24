@@ -91,6 +91,17 @@ func (q *Queries) GetAnalysis(ctx context.Context, id string) (Analysis, error) 
 	return i, err
 }
 
+const getClaimsSummary = `-- name: GetClaimsSummary :one
+SELECT analysis_id, method, summary FROM claims_summaries WHERE analysis_id = $1
+`
+
+func (q *Queries) GetClaimsSummary(ctx context.Context, analysisID string) (ClaimsSummary, error) {
+	row := q.db.QueryRow(ctx, getClaimsSummary, analysisID)
+	var i ClaimsSummary
+	err := row.Scan(&i.AnalysisID, &i.Method, &i.Summary)
+	return i, err
+}
+
 const getDocument = `-- name: GetDocument :one
 SELECT analysis_id, url, title, author, published_at, site, language, content_hash, truncated, paragraphs, purged_at FROM documents WHERE analysis_id = $1
 `
@@ -128,6 +139,39 @@ func (q *Queries) GetSummary(ctx context.Context, analysisID string) (Temperatur
 		&i.Summary,
 	)
 	return i, err
+}
+
+const listClaims = `-- name: ListClaims :many
+SELECT analysis_id, claim_id, p, kind, checkworthy, data, label, verdict FROM claims WHERE analysis_id = $1 ORDER BY p, (data ->> 'start')::int, claim_id
+`
+
+func (q *Queries) ListClaims(ctx context.Context, analysisID string) ([]Claim, error) {
+	rows, err := q.db.Query(ctx, listClaims, analysisID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Claim
+	for rows.Next() {
+		var i Claim
+		if err := rows.Scan(
+			&i.AnalysisID,
+			&i.ClaimID,
+			&i.P,
+			&i.Kind,
+			&i.Checkworthy,
+			&i.Data,
+			&i.Label,
+			&i.Verdict,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listParagraphs = `-- name: ListParagraphs :many
@@ -191,6 +235,50 @@ func (q *Queries) PurgeTexts(ctx context.Context, arg PurgeTextsParams) ([]strin
 		return nil, err
 	}
 	return items, nil
+}
+
+const saveClaim = `-- name: SaveClaim :exec
+INSERT INTO claims (analysis_id, claim_id, p, kind, checkworthy, data)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (analysis_id, claim_id) DO UPDATE
+SET p = EXCLUDED.p, kind = EXCLUDED.kind, checkworthy = EXCLUDED.checkworthy, data = EXCLUDED.data
+`
+
+type SaveClaimParams struct {
+	AnalysisID  string
+	ClaimID     string
+	P           int32
+	Kind        string
+	Checkworthy float32
+	Data        []byte
+}
+
+func (q *Queries) SaveClaim(ctx context.Context, arg SaveClaimParams) error {
+	_, err := q.db.Exec(ctx, saveClaim,
+		arg.AnalysisID,
+		arg.ClaimID,
+		arg.P,
+		arg.Kind,
+		arg.Checkworthy,
+		arg.Data,
+	)
+	return err
+}
+
+const saveClaimsSummary = `-- name: SaveClaimsSummary :exec
+INSERT INTO claims_summaries (analysis_id, method, summary) VALUES ($1, $2, $3)
+ON CONFLICT (analysis_id) DO UPDATE SET method = EXCLUDED.method, summary = EXCLUDED.summary
+`
+
+type SaveClaimsSummaryParams struct {
+	AnalysisID string
+	Method     string
+	Summary    []byte
+}
+
+func (q *Queries) SaveClaimsSummary(ctx context.Context, arg SaveClaimsSummaryParams) error {
+	_, err := q.db.Exec(ctx, saveClaimsSummary, arg.AnalysisID, arg.Method, arg.Summary)
+	return err
 }
 
 const saveDocument = `-- name: SaveDocument :exec
@@ -278,6 +366,27 @@ func (q *Queries) SaveSummary(ctx context.Context, arg SaveSummaryParams) error 
 	return err
 }
 
+const saveVerdict = `-- name: SaveVerdict :exec
+UPDATE claims SET label = $3, verdict = $4 WHERE analysis_id = $1 AND claim_id = $2
+`
+
+type SaveVerdictParams struct {
+	AnalysisID string
+	ClaimID    string
+	Label      pgtype.Text
+	Verdict    []byte
+}
+
+func (q *Queries) SaveVerdict(ctx context.Context, arg SaveVerdictParams) error {
+	_, err := q.db.Exec(ctx, saveVerdict,
+		arg.AnalysisID,
+		arg.ClaimID,
+		arg.Label,
+		arg.Verdict,
+	)
+	return err
+}
+
 const setStatus = `-- name: SetStatus :exec
 UPDATE analyses SET status = $2, error_code = $3, error_message = $4, finished_at = $5 WHERE id = $1
 `
@@ -298,6 +407,21 @@ func (q *Queries) SetStatus(ctx context.Context, arg SetStatusParams) error {
 		arg.ErrorMessage,
 		arg.FinishedAt,
 	)
+	return err
+}
+
+const stripClaims = `-- name: StripClaims :exec
+UPDATE claims
+SET data = jsonb_build_object('id', data -> 'id', 'p', data -> 'p', 'start', data -> 'start', 'end', data -> 'end', 'kind', data -> 'kind', 'checkworthy', data -> 'checkworthy'),
+    verdict = CASE WHEN verdict IS NULL THEN NULL ELSE
+        (verdict - 'explanation') || jsonb_build_object('evidence', (
+            SELECT coalesce(jsonb_agg(e - 'quote'), '[]'::jsonb) FROM jsonb_array_elements(verdict -> 'evidence') AS e))
+    END
+WHERE analysis_id = ANY($1::text[])
+`
+
+func (q *Queries) StripClaims(ctx context.Context, ids []string) error {
+	_, err := q.db.Exec(ctx, stripClaims, ids)
 	return err
 }
 

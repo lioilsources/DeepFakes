@@ -17,6 +17,7 @@ import (
 
 	"golang.org/x/time/rate"
 
+	"github.com/lioilsources/DeepFakes/api/internal/claims"
 	"github.com/lioilsources/DeepFakes/api/internal/extract"
 	"github.com/lioilsources/DeepFakes/api/internal/llm"
 	"github.com/lioilsources/DeepFakes/api/internal/service"
@@ -66,11 +67,16 @@ type env struct {
 
 func setup(t *testing.T, an service.Analyzer) env {
 	t.Helper()
+	return setupWith(t, an, nil)
+}
+
+func setupWith(t *testing.T, an service.Analyzer, cc service.ClaimChecker) env {
+	t.Helper()
 	now := time.Date(2026, 11, 12, 10, 0, 0, 0, time.UTC)
 	var mu sync.Mutex
 	n := 0
 	st := store.NewMemory()
-	svc := &service.Service{Store: st, Fetcher: fakeFetcher{page}, Analyzer: an,
+	svc := &service.Service{Store: st, Fetcher: fakeFetcher{page}, Analyzer: an, Claims: cc,
 		Now:      func() time.Time { return now },
 		NewID:    func() string { mu.Lock(); defer mu.Unlock(); n++; return fmt.Sprintf("A%03d", n) },
 		CacheTTL: time.Hour, Log: slog.New(slog.NewTextHandler(io.Discard, nil))}
@@ -242,5 +248,64 @@ func TestValidationAndRateLimit(t *testing.T) {
 	}
 	if r, _ := http.Get(e.srv.URL + "/v1/analyses/nope/events"); r.StatusCode != 404 {
 		t.Fatalf("unknown id: %d", r.StatusCode)
+	}
+}
+
+type fakeClaims struct{ fail error }
+
+func (f fakeClaims) Run(_ context.Context, in claims.Input, onClaim func(claims.Claim), onVerdict func(claims.Verdict)) (claims.Summary, error) {
+	sum := claims.Summary{Method: "claims-v1", ByLabel: map[string]int{}}
+	if f.fail != nil {
+		return sum, f.fail
+	}
+	onClaim(claims.Claim{ID: "c1", P: 1, Quote: "opened a new bridge", Claim: "The town opened a bridge.", Kind: claims.KindFact})
+	onClaim(claims.Claim{ID: "c2", P: 2, Quote: "the town took a loan", Claim: "The town took a loan.", Kind: claims.KindFact})
+	onVerdict(claims.Verdict{ClaimID: "c2", Label: claims.LabelUnverifiable, Reason: "no_sources", Evidence: []claims.Evidence{}})
+	onVerdict(claims.Verdict{ClaimID: "c1", Label: claims.LabelSupported, Confidence: 0.7,
+		Evidence: []claims.Evidence{{URL: "https://gov.example/x", Stance: claims.StanceSupports, Quote: "bridge opened"}}})
+	if in.Language != "en" || in.URL == "" {
+		return sum, fmt.Errorf("bad input %+v", in)
+	}
+	sum.ClaimsFound, sum.Checked = 2, 2
+	return sum, nil
+}
+
+func TestClaimsFlow(t *testing.T) {
+	e := setupWith(t, &fakeAnalyzer{}, fakeClaims{})
+	_, m := post(t, e, `{"url":"https://news.example/c"}`, "d")
+	id := m["id"].(string)
+	ev := readEvents(t, e, id)
+	n := names(ev)
+	for _, want := range []string{"claim", "verdict", "claims_summary"} {
+		if !strings.Contains(n, want) {
+			t.Fatalf("missing %s in %s", want, n)
+		}
+	}
+	if !strings.HasSuffix(n, "summary,claims_summary,done") {
+		t.Fatalf("live %s", n)
+	}
+	if got := names(readEvents(t, e, id)); got != "document,paragraph,paragraph,claim,claim,verdict,verdict,summary,claims_summary,done" {
+		t.Fatalf("replay %s", got)
+	}
+	r, _ := http.Get(e.srv.URL + "/v1/analyses/" + id)
+	var raw map[string]any
+	json.NewDecoder(r.Body).Decode(&raw)
+	r.Body.Close()
+	cs := raw["claims"].([]any)
+	c1 := cs[0].(map[string]any)
+	if len(cs) != 2 || c1["id"] != "c1" || c1["claim"] != "The town opened a bridge." || c1["verdict"].(map[string]any)["label"] != "supported" {
+		t.Fatalf("claims json %v", cs)
+	}
+	if raw["claims_summary"].(map[string]any)["claims_found"].(float64) != 2 {
+		t.Fatalf("claims summary %v", raw["claims_summary"])
+	}
+}
+
+func TestClaimsFailureDoesNotFailAnalysis(t *testing.T) {
+	e := setupWith(t, &fakeAnalyzer{}, fakeClaims{fail: fmt.Errorf("extract: %w", llm.ErrUnavailable)})
+	_, m := post(t, e, `{"url":"https://news.example/d"}`, "d")
+	ev := readEvents(t, e, m["id"].(string))
+	if !strings.HasSuffix(names(ev), "claims_summary,done") || !strings.Contains(ev[len(ev)-2].data, `"error":"llm_unavailable"`) {
+		t.Fatalf("%v", ev)
 	}
 }
