@@ -81,7 +81,8 @@ def follow(api: str, aid: str, t0: float) -> tuple[dict, list[dict]]:
                 row |= {"t_claims_summary": t, "claims_found": data["claims_found"], "checked": data["checked"],
                         "quotes_dropped": data["quotes_dropped"], "evidence_quotes_dropped": data["evidence_quotes_dropped"],
                         "searches": data["searches"], "search_errors": data["search_errors"],
-                        "pages_fetched": data["pages_fetched"], "claims_error": data.get("error", "")}
+                        "pages_fetched": data["pages_fetched"], "refutes_rejected": data.get("refutes_rejected", 0),
+                        "claims_error": data.get("error", "")}
             elif event == "error":
                 row |= {"t_error": t, "error": data["code"]}
             elif event == "done":
@@ -134,7 +135,7 @@ def main() -> int:
     cols = ["article", "lang", "domain", "id", "language", "paragraphs", "t_document", "t_first_claim",
             "t_first_verdict", "t_summary", "t_claims_summary", "claims_found", "checked", "labels", "evidence",
             "quotes_dropped", "evidence_quotes_dropped", "bad_offsets", "searches", "search_errors",
-            "pages_fetched", "claims_error", "t_error", "error"]
+            "pages_fetched", "refutes_rejected", "claims_error", "t_error", "error"]
     with (OUT / "m2_smoke.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
         w.writeheader()
@@ -156,7 +157,7 @@ def main() -> int:
         xs = [r[k] for r in ok if k in r]
         summary[k] = {"p50": pct(xs, 0.5), "p95": pct(xs, 0.95)}
     for k in ["claims_found", "checked", "evidence", "quotes_dropped", "evidence_quotes_dropped", "bad_offsets",
-              "searches", "search_errors", "pages_fetched"]:
+              "searches", "search_errors", "pages_fetched", "refutes_rejected"]:
         summary[k + "_total"] = sum(r.get(k, 0) for r in ok)
     (OUT / "m2_smoke_summary.json").write_text(json.dumps(summary, indent=1))
     print(json.dumps(summary, indent=1), file=sys.stderr)

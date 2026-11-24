@@ -176,6 +176,38 @@ Zjištění:
 - **Petrohrad, „příčina je nejasná“:** „vyvráceno“ zdroji, které popisují nálož pod autem. To je přesně případ, kdy pozdější zjištění nemá vyvracet stav k datu článku.
 - **Závěr:** rozdíly mezi posledními čtyřmi běhy jsou v šumu. Extrakce vybírá jiná tvrzení a stejné tvrzení skáče mezi „vyvráceno“ a „nelze ověřit“. Ladění promptů na 9 článcích tu končí. Další rozhodování patří na ruční anotaci Tier 1 a na opakované běhy (víc seedů) se srovnáním rozptylu.
 
+**Rozptyl: 3 běhy smoke na stejném kódu** (24. 11., commit ac9adec, okno `deepfake-m2-eval-qwen36-smoke3`, CsFEVER 1×):
+
+| Běh | podl. | převážně | sporné | vyvrác. | nelze ověřit | neověřováno | tvrzení | do souhrnu p50 / p95 |
+|---|---|---|---|---|---|---|---|---|
+| r1 | 2 | 10 | 2 | 0 | 38 | 19 | 71 | 39 / 47 s |
+| r2 | 3 | 12 | 2 | 0 | 33 | 19 | 69 | 39 / 46 s |
+| r3 | 3 | 12 | 1 | 0 | 36 | 22 | 74 | 38 / 51 s |
+| průměr (rozsah) | 2,7 (2–3) | 11,3 (10–12) | 1,7 (1–2) | 0 | 35,7 (33–38) | 20 (19–22) | 71,3 (69–74) | |
+
+- **Neplatné citace v UI:** 0 ve všech bězích. Zahozené citace evidence 14 / 4 / 10.
+- **Do 1. verdiktu:** p50 24–27 s, p95 34–41 s.
+- **Extrakce:** 76 skupin tvrzení (párováno podle překryvu citace). 66 se objevilo ve všech 3 bězích, 10 jen v jednom nebo dvou (4 jen v jednom).
+- **Překlápění verdiktů:** z 66 tvrzení přítomných všude má 24 různý verdikt. 15 z nich je jen posun hranice `not_checked` ↔ ostatní, tedy výběr k ověření. Z 40 tvrzení ověřených ve všech 3 bězích se mění 8: 7× podloženo ↔ nelze ověřit, 1× sporné ↔ podloženo (Finidr, 500miliontá kniha).
+- **Vyvrácení: 0 ve všech bězích.** Tři dřívější chybná vyvrácení jsou pryč ve všech třech bězích:
+  - Finidr, měsíční náklad: „nelze ověřit“. V r1 měl refute 0,9, ale jen od nezařazených zdrojů, takže zabrala pojistka `refuted_needs_known_source`.
+  - Petrohrad, „příčina je nejasná“: „nelze ověřit“.
+  - Mississippi, „40 let bez demokrata“: „převážně podloženo“.
+- **Sporné, ruční posouzení:**
+  - **Rottrová (3/3 sporné):** správně. Článek uvádí Německo do roku 1992, její vlastní rozhovor z roku 2011 „od roku 1988 do roku ´90“.
+  - **Finidr, 500miliontá kniha (sporné, sporné, podloženo):**
+    - Článek říká „v minulém roce“, Wikipedie červen 2026. Rozpor je skutečný, ale hraniční (web tiskárny dřív uváděl 2025).
+    - V r2 navíc prošlo chybné „refutes“ z en.wikipedia: „založili tři společníci“ s tvrzením „Drahoš spoluzaložil“ neodporuje. Kontrola vyvrácení ho nezachytila.
+    - V r3 je zdůvodnění anglicky u českého článku a chybně počítá „minulý rok“.
+- **`refutes_rejected`:** CsFEVER 11. Smoke ho dosud nesbíral, `bin/m2_smoke.py` ho od teď zapisuje.
+- **CsFEVER:** accuracy 0,69, macro F1 0,695, refutes P 0,85 / R 0,62, NEI → refutes 8, zahozené citace 10, 1 chyba. V rozsahu předchozích běhů (0,677–0,697).
+- **Brave:** limit 30 dotazů na běh API se vyčerpá v půlce smoke, chyby hledání 70–80 na běh. Část „nelze ověřit“ jde na vrub chybějícím výsledkům, ne modelu.
+- **Závěr:**
+  - Rozptyl mezi běhy na stejném kódu (štítky ±2, tvrzení ±3) je stejně velký jako rozdíly mezi verzemi promptů 20.–23. 11. Ty jsou tedy v šumu.
+  - Pojistky z ac9adec drží „vyvráceno“ na nule. Jediné chybné „refutes“, které prošlo kontrolou, skončilo jako „sporné“, ne „vyvráceno“.
+  - Další rozhodování patří na ruční anotaci Tier 1.
+- **Past:** na L40S zůstal po minulém okně starý `DF_READY` a první pokus proběhl naprázdno. `bin/m2_l40s_eval.sh` teď čeká, až je job `running` a vLLM odpovídá.
+
 ## Gate pro release (kap. 10 plánu)
 
 | Metrika | Gate |
